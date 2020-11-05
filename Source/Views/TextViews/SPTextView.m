@@ -159,10 +159,10 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	// disabled to get the current text range in textView safer
 	[[self layoutManager] setBackgroundLayoutEnabled:NO];
 
-	// add NSViewBoundsDidChangeNotification to scrollView
-	[scrollView setPostsBoundsChangedNotifications:YES];
-	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(boundsDidChangeNotification:) name:NSViewBoundsDidChangeNotification object:[scrollView contentView]];
+	// observe scrollViewDidEndLiveScrollNotification
+	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(scrollViewDidEndLiveScrollNotification:) name:NSScrollViewDidEndLiveScrollNotification object:scrollView];
 
+	
 	{
 		struct csItem {
 			NSString *p;
@@ -322,14 +322,19 @@ retry:
 	// If caret is not inside backticks add keywords and all words coming from the view.
 	if(!dbBrowseMode)
 	{
-		// Only parse for words if text size is less than 1MB
-		if([[self string] length] && [[self string] length]<1000000)
+		NSUInteger len = [[self string] length];
+				
+		// Only parse for words if text size is less than 500k
+		if(len && len<500000)
 		{
 			NSMutableSet *uniqueArray = [NSMutableSet setWithCapacity:5];
-
-			for(id w in [[self textStorage] words])
-				if([[w string] hasPrefix:currentWord])
-					[uniqueArray addObject:[w string]];
+			
+			for(id w in [[self textStorage] words]){
+				NSString *str = [w string];
+				if([str hasPrefix:currentWord]){
+					[uniqueArray addObject:str];
+				}
+			}
 
 			// Remove current word from list
 			[uniqueArray removeObject:currentWord];
@@ -2690,9 +2695,12 @@ retry:
 	size_t tokenEnd, token;
 	NSRange tokenRange;
 
+	// every call to add or remove attribute on the textStore
+	// calls textStorageDidProcessEditing
+
 	// first remove the old colors and kQuote
 	[textStore removeAttribute:NSForegroundColorAttributeName range:textRange];
-	// mainly for suppressing auto-pairing in 
+	// mainly for suppressing auto-pairing in
 	[textStore removeAttribute:kLEXToken range:textRange];
 
 	// initialise flex
@@ -3156,26 +3164,19 @@ retry:
 #pragma mark -
 #pragma mark delegates
 
-/**
- * Scrollview delegate after the textView's view port was changed.
- * Manily used to update the syntax highlighting for a large text size and line numbering rendering.
- */
-- (void)boundsDidChangeNotification:(NSNotification *)notification
-{
-	// Invoke syntax highlighting if text view port was changed for large text
-	if(startListeningToBoundChanges && [[self string] length] > SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING)
-	{
-		[NSObject cancelPreviousPerformRequestsWithTarget:self 
-									selector:@selector(doSyntaxHighlighting) 
-									object:nil];
+- (void)scrollViewDidEndLiveScrollNotification:(NSNotification *)notification{
 		
-		if(![[self textStorage] changeInLength])
+	if(startListeningToBoundChanges && [[self string] length] > SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING) {
+		[NSObject cancelPreviousPerformRequestsWithTarget:self
+												 selector:@selector(doSyntaxHighlighting)
+												   object:nil];
+		
+		if(![[self textStorage] changeInLength]){
 			[self performSelector:@selector(doSyntaxHighlighting) withObject:nil afterDelay:0.4];
+		}
 	}
-	// else
-	// 	[scrollView displayRect:[scrollView visibleRect]];
-
 }
+
 
 /**
  *  Performs syntax highlighting, re-init autohelp, and re-calculation of snippets after a text change
@@ -3188,29 +3189,44 @@ retry:
 	// Make sure that the notification is from the correct textStorage object
 	if (textStore!=[self textStorage]) return;
 
+	// every call to add or remove attribute on the textStore
+	// calls textStorageDidProcessEditing, so we should return asap
+	// if no editing was really done
+	NSInteger editedMask = [textStore editedMask];
+	if(editedMask < 3) { // TODO: double check this value
+		[customQueryInstance setTextViewWasChanged:NO];
+		textBufferSizeIncreased = NO;
+		return;
+	}
+	
+	
 	// Cancel autocompletion trigger
 	if([prefs boolForKey:SPCustomQueryAutoComplete])
 		[NSObject cancelPreviousPerformRequestsWithTarget:self
-								selector:@selector(doAutoCompletion) 
-								object:nil];
-
+												 selector:@selector(doAutoCompletion)
+												   object:nil];
+	
 	// Cancel calling doSyntaxHighlighting for large text
-	if([[self string] length] > SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING)
-		[NSObject cancelPreviousPerformRequestsWithTarget:self 
-								selector:@selector(doSyntaxHighlighting) 
-								object:nil];
+	if([[self string] length] > SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING) {
+		[NSObject cancelPreviousPerformRequestsWithTarget:self
+												 selector:@selector(doSyntaxHighlighting)
+												   object:nil];
+	}
+	
 
-	NSInteger editedMask = [textStore editedMask];
-
+	NSUInteger changeInLength = [textStore changeInLength];
+	
 	// Start autohelp only if the user really changed the text (not e.g. for setting a background color)
 	if([prefs boolForKey:SPCustomQueryUpdateAutoHelp] && editedMask != 1) {
 		[self performSelector:@selector(autoHelp) withObject:nil afterDelay:[[prefs valueForKey:SPCustomQueryAutoHelpDelay] doubleValue]];
 	}
 
 	// Start autocompletion if enabled
-	if([[NSApp keyWindow] firstResponder] == self && [prefs boolForKey:SPCustomQueryAutoComplete] && !completionIsOpen && editedMask != 1 && [textStore changeInLength] == 1)
+	if([[NSApp keyWindow] firstResponder] == self && [prefs boolForKey:SPCustomQueryAutoComplete] && !completionIsOpen && editedMask != 1 && changeInLength == 1)
 		[self performSelector:@selector(doAutoCompletion) withObject:nil afterDelay:[[prefs valueForKey:SPCustomQueryAutoCompleteDelay] doubleValue]];
 
+	
+	
 	// Do syntax highlighting/re-calculate snippet ranges only if the user really changed the text
 	if(editedMask != 1) {
 
@@ -3236,8 +3252,7 @@ retry:
 			}
 
 			NSInteger editStartPosition = [textStore editedRange].location;
-			NSUInteger changeInLength = [textStore changeInLength];
-
+			
 			// Adjust length change to current snippet
 			currentSnippetRef->length += changeInLength;
 			// If length < 0 break snippet input
@@ -3266,16 +3281,18 @@ retry:
 			if(mirroredCounter > -1 && snippetControlCounter > -1) {
 				[self performSelector:@selector(processMirroredSnippets) withObject:nil afterDelay:0.0];
 			}
-
-			
 		}
-		if([textStore changeInLength] > 0)
+				
+		if(changeInLength > 0){
 			textBufferSizeIncreased = YES;
-		else
+		}
+		else{
 			textBufferSizeIncreased = NO;
+		}
 
-		if([textStore changeInLength] < SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING)
+		if(changeInLength < SP_TEXT_SIZE_TRIGGER_FOR_PARTLY_PARSING){
 			[self doSyntaxHighlighting];
+		}
 
 	} else {
 		[customQueryInstance setTextViewWasChanged:NO];
