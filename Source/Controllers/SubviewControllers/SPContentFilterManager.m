@@ -93,7 +93,7 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 	if ([[prefs objectForKey:SPContentFilters] objectForKey:filterType]) {
 		for (id fav in [[prefs objectForKey:SPContentFilters] objectForKey:filterType])
 		{
-			id f = [fav mutableCopy] ;
+			id f = [fav mutableCopy];
 
 			if ([f objectForKey:@"ConjunctionLabels"]) {
 				[f setObject:[[f objectForKey:@"ConjunctionLabels"] objectAtIndex:0] forKey:@"ConjunctionLabel"];
@@ -291,7 +291,7 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 									   otherButton:nil
 						 informativeTextWithFormat:NSLocalizedString(@"Are you sure you want to remove all selected content filters? This action cannot be undone.", @"remove all selected content filters informative message")];
 
-	[alert setAlertStyle:NSCriticalAlertStyle];
+	[alert setAlertStyle:NSAlertStyleCritical];
 
 	NSArray *buttons = [alert buttons];
 
@@ -356,7 +356,6 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
  */
 - (IBAction)importFavoritesByReplacing:(id)sender
 {
-
 }
 
 /**
@@ -542,8 +541,8 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 
 	[pboard declareTypes:pboardTypes owner:nil];
 
-	NSMutableData *indexdata = [[NSMutableData alloc] init] ;
-	NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:indexdata] ;
+	NSMutableData *indexdata = [[NSMutableData alloc] init];
+	NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:indexdata];
 	[archiver encodeObject:rows forKey:@"indexdata"];
 	[archiver finishEncoding];
 	[pboard setData:indexdata forType:SPContentFilterPasteboardDragType];
@@ -578,7 +577,7 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 
 	if(row < 1) return NO;
 
-	NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:[[info draggingPasteboard] dataForType:SPContentFilterPasteboardDragType]] ;
+	NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:[[info draggingPasteboard] dataForType:SPContentFilterPasteboardDragType]];
 	NSIndexSet *draggedIndexes = [[NSIndexSet alloc] initWithIndexSet:(NSIndexSet *)[unarchiver decodeObjectForKey:@"indexdata"]];
 	[unarchiver finishDecoding];
 
@@ -826,7 +825,7 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 													   otherButton:nil
 										 informativeTextWithFormat:NSLocalizedString(@"File couldn't be read. (%@)", @"error while reading data file"), [error localizedDescription]];
 					
-					[alert setAlertStyle:NSCriticalAlertStyle];
+					[alert setAlertStyle:NSAlertStyleCritical];
 					[alert runModal];
 					return;
 				}
@@ -914,7 +913,7 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 				                                   otherButton:nil
 				                     informativeTextWithFormat:@"%@", [error localizedDescription]];
 
-				[alert setAlertStyle:NSCriticalAlertStyle];
+				[alert setAlertStyle:NSAlertStyleCritical];
 				[alert runModal];
 				return;
 			}

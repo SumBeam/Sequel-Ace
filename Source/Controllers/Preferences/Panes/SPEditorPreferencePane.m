@@ -114,13 +114,13 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	[NSColor setIgnoresAlpha:NO];
 	
 	NSTableColumn *column = [[colorSettingTableView tableColumns] objectAtIndex:0];
-	NSTextFieldCell *textCell = [[NSTextFieldCell alloc] init] ;
+	NSTextFieldCell *textCell = [[NSTextFieldCell alloc] init];
 	
 	[textCell setFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorFont]]];
 	
 	column = [[colorSettingTableView tableColumns] objectAtIndex: 1];
 	
-	SPColorWellCell *colorCell = [[SPColorWellCell alloc] init] ;
+	SPColorWellCell *colorCell = [[SPColorWellCell alloc] init];
 	
 	[colorCell setEditable:YES];
 	[colorCell setTarget:self];
@@ -751,7 +751,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 		                                 defaultButton:NSLocalizedString(@"Proceed", @"proceed button")
 		                               alternateButton:NSLocalizedString(@"Cancel", @"cancel button")
 		                                   otherButton:nil
-		                                    alertStyle:NSWarningAlertStyle
+		                                    alertStyle:NSAlertStyleWarning
 		                                     docWindow:[[self view] window]
 		                                 modalDelegate:self
 		                                didEndSelector:@selector(checkForUnsavedThemeDidEndSheet:returnCode:contextInfo:)

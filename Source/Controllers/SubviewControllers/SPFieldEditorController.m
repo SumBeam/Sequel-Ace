@@ -41,6 +41,8 @@
 
 #import <SPMySQL/SPMySQL.h>
 
+#import "sequel-ace-Swift.h"
+
 typedef enum {
 	TextSegment = 0,
 	ImageSegment,
@@ -233,8 +235,6 @@ typedef enum {
 	if ([fieldEncoding length])
 		[label appendString:fieldEncoding];
 
-	CGFloat monospacedFontSize = [prefs floatForKey:SPMonospacedFontSize] > 0 ? [prefs floatForKey:SPMonospacedFontSize] : [NSFont smallSystemFontSize];
-
 	if ([fieldType length] && [[fieldType uppercaseString] isEqualToString:@"BIT"]) {
 
 		sheetEditData = (NSString*)data;
@@ -285,20 +285,14 @@ typedef enum {
 		// Based on user preferences, either use:
 		// 1. The font specifically chosen for the editor sheet textView (FieldEditorSheetFont, right-click in the textView, and choose "Font > Show Fonts" to do that);
 		// 2. The font used for the tablew view (GlobalResultTableFont, per the "MySQL Content Font" preference option);
-		// 3. The Sequel-Ace default monospaced font (UseMonospacedFonts, per the "Use monospaced fonts" preference option).
 		if ([prefs objectForKey:SPFieldEditorSheetFont]) {
 			textEditorFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPFieldEditorSheetFont]];
-		} else if ([prefs objectForKey:SPGlobalResultTableFont]) {
-			textEditorFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultTableFont]];
-		} else if ([prefs boolForKey:SPUseMonospacedFonts]) {
-			textEditorFont = [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize];
+		} else if ([prefs objectForKey:SPGlobalFontSettings]) {
+			textEditorFont = [NSUserDefaults getFont];
 		}
-
 		[editTextView setFont:textEditorFont];
 
 		[editTextView setContinuousSpellCheckingEnabled:[prefs boolForKey:SPBlobTextEditorSpellCheckingEnabled]];
-
-		[hexTextView setFont:[NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize]];
 
 		[editSheetFieldName setStringValue:[NSString stringWithFormat:@"%@: %@", NSLocalizedString(@"Field", @"Field"), label]];
 
@@ -373,7 +367,7 @@ typedef enum {
 		NSImage *image = nil;
 
 		if ([sheetEditData isKindOfClass:[NSData class]]) {
-			image = [[NSImage alloc] initWithData:sheetEditData] ;
+			image = [[NSImage alloc] initWithData:sheetEditData];
 
 			// Set hex view to "" - load on demand only
 			[hexTextView setString:@""];
@@ -396,7 +390,7 @@ typedef enum {
 			[editSheetSegmentControl setSelectedSegment:HexSegment];
 		}
 		else if ([sheetEditData isKindOfClass:[SPMySQLGeometryData class]]) {
-			SPGeometryDataView *v = [[SPGeometryDataView alloc] initWithCoordinates:[sheetEditData coordinates] targetDimension:2000.0f] ;
+			SPGeometryDataView *v = [[SPGeometryDataView alloc] initWithCoordinates:[sheetEditData coordinates] targetDimension:2000.0f];
 
 			image = [v thumbnailImage];
 
@@ -682,10 +676,6 @@ typedef enum {
 
 		[editSheetProgressBar startAnimation:self];
 
-		// free old data
-		if ( sheetEditData != nil ) {
-		}
-
 		// load new data/images
 		sheetEditData = [[NSData alloc] initWithContentsOfURL:[panel URL]];
 
@@ -757,7 +747,7 @@ typedef enum {
 
 			} else if (editImage != nil){
 
-				SPGeometryDataView *v = [[SPGeometryDataView alloc] initWithCoordinates:[sheetEditData coordinates] targetDimension:2000.0f] ;
+				SPGeometryDataView *v = [[SPGeometryDataView alloc] initWithCoordinates:[sheetEditData coordinates] targetDimension:2000.0f];
 				NSData *pdf = [v pdfData];
 				if(pdf)
 					[pdf writeToURL:fileURL atomically:YES];
@@ -980,7 +970,7 @@ typedef enum {
 
 	NSImage *image = nil;
 
-	image = [[NSImage alloc] initWithPasteboard:[NSPasteboard generalPasteboard]] ;
+	image = [[NSImage alloc] initWithPasteboard:[NSPasteboard generalPasteboard]];
 	if (image) {
 
 		[editImage setImage:image];
@@ -1047,9 +1037,6 @@ typedef enum {
 	NSUInteger maxBit = (NSUInteger)((maxTextLength > 64) ? 64 : maxTextLength);
 
 	if([bitSheetNULLButton state] == NSOnState) {
-		if ( sheetEditData != nil ) {
-		}
-
 		NSString *nullString = [prefs objectForKey:SPNullValue];
 		sheetEditData = [NSString stringWithString:nullString];
 		[bitSheetIntegerTextField setStringValue:nullString];
@@ -1076,9 +1063,6 @@ typedef enum {
 	[bitSheetIntegerTextField setStringValue:[[NSNumber numberWithUnsignedLongLong:intValue] stringValue]];
 	[bitSheetHexTextField setStringValue:[NSString stringWithFormat:@"%lX", (unsigned long)intValue]];
 	[bitSheetOctalTextField setStringValue:[NSString stringWithFormat:@"%llo", (unsigned long long)intValue]];
-	// free old data
-	if ( sheetEditData != nil ) {
-	}
 
 	// set edit data to text
 	sheetEditData = [NSString stringWithString:bitString];
@@ -1353,11 +1337,7 @@ typedef enum {
 		// clear the image and hex (since i doubt someone can "type" a gif)
 		[editImage setImage:nil];
 		[hexTextView setString:@""];
-
-		// free old data
-		if ( sheetEditData != nil ) {
-		}
-
+		
 		// set edit data to text
 		sheetEditData = [NSString stringWithString:[editTextView string]];
 	}

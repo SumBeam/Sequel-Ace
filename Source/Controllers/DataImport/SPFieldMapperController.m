@@ -41,6 +41,8 @@
 
 #import <SPMySQL/SPMySQL.h>
 
+#import "sequel-ace-Swift.h"
+
 // Constants
 static NSString *SPTableViewImportValueColumnID = @"import_value";
 static NSString *SPTableViewTypeColumnID        = @"type";
@@ -125,7 +127,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	// Note: [fileSourcePath setURL:[NSURL fileWithPath:sourcePath]] does NOT work
 	// if Sequel Ace runs localized. Reason unknown, it seems to be a NSPathControl bug.
 	// Ask HansJB for more info.
-	NSPathControl *pc = [[NSPathControl alloc] initWithFrame:NSZeroRect] ;
+	NSPathControl *pc = [[NSPathControl alloc] initWithFrame:NSZeroRect];
 	[pc setURL:[NSURL fileURLWithPath:sourcePath]];
 	if([pc pathComponentCells])
 		[fileSourcePath setPathComponentCells:[pc pathComponentCells]];
@@ -419,7 +421,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 												   otherButton:nil
 									 informativeTextWithFormat:NSLocalizedString(@"An error occurred while trying to add the new column '%@' by\n\n%@.\n\nMySQL said: %@", @"error adding new column informative message"), [fieldMappingTableColumnNames objectAtIndex:currentIndex], createString, [mySQLConnection lastErrorMessage]];
 
-				[alert setAlertStyle:NSCriticalAlertStyle];
+				[alert setAlertStyle:NSAlertStyleCritical];
 				[alert beginSheetModalForWindow:[self window] modalDelegate:self didEndSelector:nil contextInfo:nil];
 				return;
 			} else {
@@ -470,7 +472,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 											   otherButton:nil
 								 informativeTextWithFormat:NSLocalizedString(@"An error occurred while trying to add the new table '%@' by\n\n%@.\n\nMySQL said: %@", @"error adding new table informative message"), [newTableNameTextField stringValue], createString, [mySQLConnection lastErrorMessage]];
 
-			[alert setAlertStyle:NSCriticalAlertStyle];
+			[alert setAlertStyle:NSAlertStyleCritical];
 			[alert beginSheetModalForWindow:[self window] modalDelegate:self didEndSelector:nil contextInfo:nil];
 			return;
 		}
@@ -1402,7 +1404,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	}
 
 	// Sort the matrix according distance
-	NSSortDescriptor *sortByDistance = [[NSSortDescriptor alloc] initWithKey:@"dist" ascending:YES] ;
+	NSSortDescriptor *sortByDistance = [[NSSortDescriptor alloc] initWithKey:@"dist" ascending:YES];
 	[distMatrix sortUsingDescriptors:[NSArray arrayWithObjects:sortByDistance, nil]];
 
 	NSMutableArray *matchedFile  = [NSMutableArray array];
@@ -1662,9 +1664,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 
 - (void)tableView:(NSTableView *)aTableView willDisplayCell:(id)aCell forTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex
 {
-	CGFloat monospacedFontSize = [prefs floatForKey:SPMonospacedFontSize] > 0 ? [prefs floatForKey:SPMonospacedFontSize] : [NSFont smallSystemFontSize];
-
-	[aCell setFont:[prefs boolForKey:SPUseMonospacedFonts] ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] : [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
+	[aCell setFont:[NSUserDefaults getFont]];
 }
 
 - (void)tableView:(NSTableView*)aTableView didClickTableColumn:(NSTableColumn *)aTableColumn
@@ -1813,9 +1813,9 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 				[aTableColumn setDataCell:typeComboxBox];
 				return [fieldMappingTableTypes objectAtIndex:rowIndex];
 			} else {
-				NSTokenFieldCell *b = [[NSTokenFieldCell alloc] initTextCell:[fieldMappingTableTypes objectAtIndex:rowIndex]] ;
+				NSTokenFieldCell *b = [[NSTokenFieldCell alloc] initTextCell:[fieldMappingTableTypes objectAtIndex:rowIndex]];
 				[b setEditable:NO];
-				[b setAlignment:NSLeftTextAlignment];
+				[b setAlignment:NSTextAlignmentLeft];
 				[b setWraps:NO];
 				[b setFont:[NSFont systemFontOfSize:9]];
 				[b setDelegate:self];
@@ -1946,8 +1946,6 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 					if(![defaultFieldTypesForComboBox containsObject:anObject])
 						[defaultFieldTypesForComboBox insertObject:anObject atIndex:0];
 				}
-			} else {
-
 			}
 		}
 
@@ -2063,7 +2061,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 
 		// If newTableNameTextField is active enter key closes the sheet
 		if(control == newTableNameTextField) {
-			NSButton *b = [[NSButton alloc] init] ;
+			NSButton *b = [[NSButton alloc] init];
 			[b setTag:1];
 			[self closeSheet:b];
 			return YES;

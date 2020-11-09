@@ -48,8 +48,7 @@
 @implementation SPHelpViewerClient
 
 + (void)initialize
-{
-	
+{	
 }
 
 - (instancetype)init
@@ -193,7 +192,7 @@
 		}
 		// are examples available?
 		if([tableDetails objectForKey:@"example"]){
-			NSString *examples = [[tableDetails objectForKey:@"example"] copy] ;
+			NSString *examples = [[tableDetails objectForKey:@"example"] copy];
 			if([examples length]) [theHelp appendFormat:@"<br><i><b>%1$@</b></i><br><pre class='example'>%2$@</pre>",NSLocalizedString(@"Example:",@"Mysql Help Viewer : Help Topic: Example section title"), examples];
 		}
 	}

@@ -149,7 +149,7 @@ static inline NSRect SPTextLinkRectFromCellRect(NSRect inRect)
 	if (maxWidth < mainStringWidth) {
 		for (i = 0; i <= [mainString length]; i++) {
 			if ([[mainString attributedSubstringFromRange:NSMakeRange(0, i)] size].width >= maxWidth && i >= 3) {
-				mainString = [[NSMutableAttributedString alloc] initWithString:[[[mainString attributedSubstringFromRange:NSMakeRange(0, i - 3)] string] stringByAppendingString:@"..."] attributes:[self mainStringAttributedStringAttributes]] ;
+				mainString = [[NSMutableAttributedString alloc] initWithString:[[[mainString attributedSubstringFromRange:NSMakeRange(0, i - 3)] string] stringByAppendingString:@"..."] attributes:[self mainStringAttributedStringAttributes]];
 			}
 		}
 	}
@@ -157,7 +157,7 @@ static inline NSRect SPTextLinkRectFromCellRect(NSRect inRect)
 	if (maxWidth < subStringWidth) {
 		for (i = 0; i <= [subString length]; i++) {
 			if ([[subString attributedSubstringFromRange:NSMakeRange(0, i)] size].width >= maxWidth && i >= 3) {
-				subString = [[NSMutableAttributedString alloc] initWithString:[[[subString attributedSubstringFromRange:NSMakeRange(0, i - 3)] string] stringByAppendingString:@"..."] attributes:[self subStringAttributedStringAttributes]] ;
+				subString = [[NSMutableAttributedString alloc] initWithString:[[[subString attributedSubstringFromRange:NSMakeRange(0, i - 3)] string] stringByAppendingString:@"..."] attributes:[self subStringAttributedStringAttributes]];
 			}
 		}
 	}
@@ -225,7 +225,7 @@ static inline NSRect SPTextLinkRectFromCellRect(NSRect inRect)
 		return [super trackMouse:theEvent inRect:cellFrame ofView:controlView untilMouseUp:untilMouseUp];
 
 	// Ignore events other than mouse down.
-	if ([theEvent type] != NSLeftMouseDown) return YES;
+	if ([theEvent type] != NSEventTypeLeftMouseDown) return YES;
 
 	// Continue tracking the mouse while it's down, updating the state as it enters and leaves the cell,
 	// until it is released; if still within the cell, follow the link.
@@ -271,12 +271,12 @@ static inline NSRect SPTextLinkRectFromCellRect(NSRect inRect)
 		}
 
 		// Keep tracking the mouse outside the button, until the mouse button is released or it reenters the button
-		theEvent = [[controlView window] nextEventMatchingMask: NSLeftMouseUpMask | NSLeftMouseDraggedMask];
+		theEvent = [[controlView window] nextEventMatchingMask: NSEventTypeLeftMouseUp | NSEventMaskLeftMouseDragged];
 		p = [controlView convertPoint:[theEvent locationInWindow] fromView:nil];
 		mouseInButton = NSMouseInRect(p, linkRect, [controlView isFlipped]);
 
 		// If the event is a mouse release, break the loop.
-		if ([theEvent type] == NSLeftMouseUp) break;
+		if ([theEvent type] == NSEventTypeLeftMouseUp) break;
 	}
 
 	return YES;
@@ -323,7 +323,7 @@ static inline NSRect SPTextLinkRectFromCellRect(NSRect inRect)
  */
 - (NSAttributedString *)constructSubStringAttributedString
 {
-	return [[NSAttributedString alloc] initWithString:activityInfo attributes:[self subStringAttributedStringAttributes]] ;
+	return [[NSAttributedString alloc] initWithString:activityInfo attributes:[self subStringAttributedStringAttributes]];
 }
 
 /**
@@ -331,7 +331,7 @@ static inline NSRect SPTextLinkRectFromCellRect(NSRect inRect)
  */
 - (NSAttributedString *)attributedStringForFavoriteName
 {	
-	return [[NSAttributedString alloc] initWithString:activityName attributes:[self mainStringAttributedStringAttributes]] ;
+	return [[NSAttributedString alloc] initWithString:activityName attributes:[self mainStringAttributedStringAttributes]];
 }
 
 /**

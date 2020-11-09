@@ -154,7 +154,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 #pragma mark -
 
 + (void)initialize {
-	
 }
 
 - (id)init
@@ -271,20 +270,22 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[self _addPreferenceObservers];
 
 	// Register for notifications
-	[[NSNotificationCenter defaultCenter] addObserver:self
-	                                         selector:@selector(willPerformQuery:)
-	                                             name:@"SMySQLQueryWillBePerformed"
-	                                           object:self];
-
-	[[NSNotificationCenter defaultCenter] addObserver:self
-	                                         selector:@selector(hasPerformedQuery:)
-	                                             name:@"SMySQLQueryHasBeenPerformed"
-	                                           object:self];
-
-	[[NSNotificationCenter defaultCenter] addObserver:self
-	                                         selector:@selector(applicationWillTerminate:)
-	                                             name:@"NSApplicationWillTerminateNotification"
-	                                           object:nil];
+	NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
+	
+	[nc addObserver:self
+		   selector:@selector(willPerformQuery:)
+			   name:@"SMySQLQueryWillBePerformed"
+			 object:self];
+	
+	[nc addObserver:self
+		   selector:@selector(hasPerformedQuery:)
+			   name:@"SMySQLQueryHasBeenPerformed"
+			 object:self];
+	
+	[nc addObserver:self
+		   selector:@selector(applicationWillTerminate:)
+			   name:@"NSApplicationWillTerminateNotification"
+			 object:nil];
 
 	// Find the Database -> Database Encoding menu (it's not in our nib, so we can't use interface builder)
 	selectEncodingMenu = [[[[[NSApp mainMenu] itemWithTag:SPMainMenuDatabase] submenu] itemWithTag:1] submenu];
@@ -319,7 +320,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[progressIndicatorShadow setShadowBlurRadius:1.0f];
 	[progressIndicatorShadow setShadowColor:[NSColor colorWithCalibratedWhite:0.0f alpha:0.75f]];
 	[taskProgressIndicator setShadow:progressIndicatorShadow];
-	taskProgressWindow = [[NSWindow alloc] initWithContentRect:[taskProgressLayer bounds] styleMask:NSBorderlessWindowMask backing:NSBackingStoreBuffered defer:NO];
+	taskProgressWindow = [[NSWindow alloc] initWithContentRect:[taskProgressLayer bounds] styleMask:NSWindowStyleMaskBorderless backing:NSBackingStoreBuffered defer:NO];
 	[taskProgressWindow setReleasedWhenClosed:NO];
 	[taskProgressWindow setOpaque:NO];
 	[taskProgressWindow setBackgroundColor:[NSColor clearColor]];
@@ -1893,14 +1894,11 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Check %@", @"CHECK one or more tables - result title"), what] message:message callback:nil];
 	} else {
 		message = NSLocalizedString(@"MySQL said:",@"mysql said message");
-		if (statusValues) {
-			
-		}
 		statusValues = resultStatuses;
 
 		[NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error while checking selected items", @"error while checking selected items message") message:message accessoryView:statusTableAccessoryView callback:^{
 			if (self->statusValues) {
-				
+				self->statusValues = nil;
 			}
 		}];
 	}
@@ -1963,7 +1961,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		statusValues = resultStatuses;
 		[NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error while analyzing selected items", @"error while analyzing selected items message") message:message accessoryView:statusTableAccessoryView callback:^{
 			if (self->statusValues) {
-				
+				self->statusValues = nil;
 			}
 		}];
 	}
@@ -2028,7 +2026,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 		[NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error while optimizing selected items", @"error while optimizing selected items message") message:message accessoryView:statusTableAccessoryView callback:^{
 			if (self->statusValues) {
-				
+				self->statusValues = nil;
 			}
 		}];
 	}
@@ -2092,7 +2090,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 		[NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error while repairing selected items", @"error while repairing selected items message") message:message accessoryView:statusTableAccessoryView callback:^{
 			if (self->statusValues) {
-				
+				self->statusValues = nil;
 			}
 		}];
 	}
@@ -2156,7 +2154,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 		[NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error while flushing selected items", @"error while flushing selected items message") message:message accessoryView:statusTableAccessoryView callback:^{
 			if (self->statusValues) {
-				
+				self->statusValues = nil;
 			}
 		}];
 	}
@@ -2198,7 +2196,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 		[NSAlert createAccessoryWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Checksums of %@",@"Checksums of %@ message"), what] message:message accessoryView:statusTableAccessoryView callback:^{
 			if (self->statusValues) {
-				
+				self->statusValues = nil;
 			}
 		}];
 	}
@@ -2353,9 +2351,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		return;
 	}
 	
-	[userManagerInstance beginSheetModalForWindow:parentWindow completionHandler:^(){
-		
-	}];
+	[userManagerInstance beginSheetModalForWindow:parentWindow completionHandler:^(){ }];
 }
 
 /**
@@ -2647,23 +2643,35 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	SPTableViewType theView = NSNotFound;
 
 	// -selectedTabViewItem is a UI method according to Xcode 9.2!
-	// jamesstout note - this is called a LOT. 
+	// jamesstout note - this is called a LOT.
+	// using tableViewTypeEnumFromString is 5-7x faster than if/else isEqualToString:
 	NSString *viewName = [[[tableTabView onMainThread] selectedTabViewItem] identifier];
-
-	if ([viewName isEqualToString:@"source"]) {
-		theView = SPTableViewStructure;
-	} else if ([viewName isEqualToString:@"content"]) {
-		theView = SPTableViewContent;
-	} else if ([viewName isEqualToString:@"customQuery"]) {
-		theView = SPTableViewCustomQuery;
-	} else if ([viewName isEqualToString:@"status"]) {
-		theView = SPTableViewStatus;
-	} else if ([viewName isEqualToString:@"relations"]) {
-		theView = SPTableViewRelations;
-	} else if ([viewName isEqualToString:@"triggers"]) {
-		theView = SPTableViewTriggers;
+	
+	SPTableViewType enumValue = [viewName tableViewTypeEnumFromString];
+	
+	switch (enumValue) {
+		case SPTableViewStructure:
+			theView = SPTableViewStructure;
+			break;
+		case SPTableViewContent:
+			theView = SPTableViewContent;
+			break;
+		case SPTableViewCustomQuery:
+			theView = SPTableViewCustomQuery;
+			break;
+		case SPTableViewStatus:
+			theView = SPTableViewStatus;
+			break;
+		case SPTableViewRelations:
+			theView = SPTableViewRelations;
+			break;
+		case SPTableViewTriggers:
+			theView = SPTableViewTriggers;
+			break;
+		default:
+			theView = SPTableViewInvalid;
 	}
-
+		
 	return theView;
 }
 
@@ -3137,7 +3145,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 				                                 defaultButton:NSLocalizedString(@"OK", @"OK button")
 				                               alternateButton:NSLocalizedString(@"Ignore", @"ignore button")
 				                                   otherButton:nil
-				                                    alertStyle:NSCriticalAlertStyle
+				                                    alertStyle:NSAlertStyleCritical
 				                                     docWindow:parentWindow
 				                                 modalDelegate:self
 				                                didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
@@ -3234,8 +3242,8 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		// Convert the content selection to encoded data
 		if ([[spfData objectForKey:@"session"] objectForKey:@"contentSelection"]) {
 			NSMutableDictionary *sessionInfo = [NSMutableDictionary dictionaryWithDictionary:[spfData objectForKey:@"session"]];
-			NSMutableData *dataToEncode = [[NSMutableData alloc] init] ;
-			NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:dataToEncode] ;
+			NSMutableData *dataToEncode = [[NSMutableData alloc] init];
+			NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:dataToEncode];
 			[archiver encodeObject:[sessionInfo objectForKey:@"contentSelection"] forKey:@"data"];
 			[archiver finishEncoding];
 			[sessionInfo setObject:dataToEncode forKey:@"contentSelection"];
@@ -3245,8 +3253,8 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		[spfStructure setObject:spfData forKey:@"data"];
 	}
 	else {
-		NSMutableData *dataToEncrypt = [[NSMutableData alloc] init] ;
-		NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:dataToEncrypt] ;
+		NSMutableData *dataToEncrypt = [[NSMutableData alloc] init];
+		NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:dataToEncrypt];
 		[archiver encodeObject:spfData forKey:@"data"];
 		[archiver finishEncoding];
 		[spfStructure setObject:[dataToEncrypt dataEncryptedWithPassword:[spfDocData_temp objectForKey:@"e_string"]] forKey:@"data"];
@@ -3676,7 +3684,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	NSString *imagePath = [[NSBundle mainBundle] pathForResource:imageName ofType:@"png"];
 	if (!imagePath) return;
 
-	NSImage *image = [[NSImage alloc] initByReferencingFile:imagePath] ;
+	NSImage *image = [[NSImage alloc] initByReferencingFile:imagePath];
 	[titleImageView setImage:image];
 }
 
@@ -3710,7 +3718,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		if ((controllerClass = NSClassFromString(@"NSTitlebarAccessoryViewController"))) { // OS X 10.11 and later
 			[titleAccessoryView setFrame:NSMakeRect(0, 0, titleAccessoryView.frame.size.width, 120)]; // make it really tall, so that it's on the top right of the title/toolbar area, instead of the bottom right (AppKit will not prevent it from going behind the toolbar)
 			
-			NSTitlebarAccessoryViewController *accessoryViewController = [[controllerClass alloc] init] ;
+			NSTitlebarAccessoryViewController *accessoryViewController = [[controllerClass alloc] init];
 			accessoryViewController.view = titleAccessoryView;
 			accessoryViewController.layoutAttribute = NSLayoutAttributeRight;
 			[parentWindow addTitlebarAccessoryViewController:accessoryViewController];
@@ -3778,7 +3786,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (NSToolbarItem *)toolbar:(NSToolbar *)toolbar itemForItemIdentifier:(NSString *)itemIdentifier willBeInsertedIntoToolbar:(BOOL)willBeInsertedIntoToolbar
 {
-	NSToolbarItem *toolbarItem = [[NSToolbarItem alloc] initWithItemIdentifier:itemIdentifier] ;
+	NSToolbarItem *toolbarItem = [[NSToolbarItem alloc] initWithItemIdentifier:itemIdentifier];
 
 	if ([itemIdentifier isEqualToString:SPMainToolbarDatabaseSelection]) {
 		[toolbarItem setLabel:NSLocalizedString(@"Select Database", @"toolbar item for selecting a db")];
@@ -4077,6 +4085,13 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)parentTabDidClose
 {
+	// if tab closed and there is text in the query view, safe to history
+	NSString *queryString = [self->customQueryTextView.textStorage string];
+	
+	if([queryString length] > 0){
+		[[SPQueryController sharedQueryController] addHistory:queryString forFileURL:[self fileURL]];
+	}
+		
 	// Cancel autocompletion trigger
 	if([prefs boolForKey:SPCustomQueryAutoComplete]) {
 		[NSObject cancelPreviousPerformRequestsWithTarget:[customQueryInstance valueForKeyPath:@"textView"]
@@ -4226,7 +4241,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
  */
 - (NSURL *)fileURL
 {
-	return [spfFileURL copy] ;
+	return [spfFileURL copy];
 }
 
 /**
@@ -4663,7 +4678,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		// If a content selection data key exists in the session, decode it
 		if ([[[data objectForKey:@"session"] objectForKey:@"contentSelection"] isKindOfClass:[NSData class]]) {
 			NSMutableDictionary *sessionInfo = [NSMutableDictionary dictionaryWithDictionary:[data objectForKey:@"session"]];
-			NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:[sessionInfo objectForKey:@"contentSelection"]] ;
+			NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:[sessionInfo objectForKey:@"contentSelection"]];
 			[sessionInfo setObject:[unarchiver decodeObjectForKey:@"data"] forKey:@"contentSelection"];
 			[unarchiver finishDecoding];
 			[data setObject:sessionInfo forKey:@"session"];
@@ -4671,9 +4686,9 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 	else if ([[spf objectForKey:@"data"] isKindOfClass:[NSData class]]) {
 		NSData *decryptdata = nil;
-		decryptdata = [[NSMutableData alloc] initWithData:[(NSData *)[spf objectForKey:@"data"] dataDecryptedWithPassword:encryptpw]] ;
+		decryptdata = [[NSMutableData alloc] initWithData:[(NSData *)[spf objectForKey:@"data"] dataDecryptedWithPassword:encryptpw]];
 		if (decryptdata != nil && [decryptdata length]) {
-			NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:decryptdata] ;
+			NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:decryptdata];
 			data = [NSMutableDictionary dictionaryWithDictionary:(NSDictionary *)[unarchiver decodeObjectForKey:@"data"]];
 			[unarchiver finishDecoding];
 		}
@@ -4798,9 +4813,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 			[self updateWindowTitle:self];
 		});
 
-		// dealloc spfSession data
-		
-
 		// End the task
 		[self endTask];
 	}
@@ -4872,7 +4884,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	while (_isWorkingLevel || !_isConnected) {
 		if(_workingTimeout) break;
 		// Do not block self
-		NSEvent *event = [NSApp nextEventMatchingMask:NSAnyEventMask
+		NSEvent *event = [NSApp nextEventMatchingMask:NSEventMaskAny
 		                                    untilDate:[NSDate distantPast]
 		                                       inMode:NSDefaultRunLoopMode
 		                                      dequeue:YES];
@@ -5062,7 +5074,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 			for(NSString* item in items) {
 
 				NSEvent* event = [NSApp currentEvent];
-				if ([event type] == NSKeyDown) {
+				if ([event type] == NSEventTypeKeyDown) {
 					unichar key = [[event characters] length] == 1 ? [[event characters] characterAtIndex:0] : 0;
 					if (([event modifierFlags] & NSEventModifierFlagCommand) && key == '.') {
 						userTerminated = YES;
@@ -5250,13 +5262,13 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 					NSArray *theRow;
 					NSMutableString *result = [NSMutableString string];
 					if(writeAsCsv) {
-						for ( i = 0 ; i < [theResult numberOfRows] ; i++ ) {
+						for ( i = 0 ; i < [theResult numberOfRows]; i++ ) {
 							[result setString:@""];
 							theRow = [theResult getRowAsArray];
-							for( j = 0 ; j < [theRow count] ; j++ ) {
+							for( j = 0 ; j < [theRow count]; j++ ) {
 
 								NSEvent* event = [NSApp currentEvent];
-								if ([event type] == NSKeyDown) {
+								if ([event type] == NSEventTypeKeyDown) {
 									unichar key = [[event characters] length] == 1 ? [[event characters] characterAtIndex:0] : 0;
 									if (([event modifierFlags] & NSEventModifierFlagCommand) && key == '.') {
 										userTerminated = YES;
@@ -5288,13 +5300,13 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 						}
 					}
 					else {
-						for ( i = 0 ; i < [theResult numberOfRows] ; i++ ) {
+						for ( i = 0 ; i < [theResult numberOfRows]; i++ ) {
 							[result setString:@""];
 							theRow = [theResult getRowAsArray];
-							for( j = 0 ; j < [theRow count] ; j++ ) {
+							for( j = 0 ; j < [theRow count]; j++ ) {
 
 								NSEvent* event = [NSApp currentEvent];
-								if ([event type] == NSKeyDown) {
+								if ([event type] == NSEventTypeKeyDown) {
 									unichar key = [[event characters] length] == 1 ? [[event characters] characterAtIndex:0] : 0;
 									if (([event modifierFlags] & NSEventModifierFlagCommand) && key == '.') {
 										userTerminated = YES;
@@ -5949,7 +5961,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	for (NSString* cmdPath in triggeredCommands) 
 	{
 		NSArray *data = [cmdPath componentsSeparatedByString:@"|"];
-		NSMenuItem *aMenuItem = [[NSMenuItem alloc] init] ;
+		NSMenuItem *aMenuItem = [[NSMenuItem alloc] init];
 		
 		[aMenuItem setTag:0];
 		[aMenuItem setToolTip:[data objectAtIndex:0]];
@@ -6004,10 +6016,6 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[prefs addObserver:tableRelationsInstance forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:NULL];
 	[prefs addObserver:[SPQueryController sharedQueryController] forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:NULL];
 
-	// Register observers for the when the UseMonospacedFonts preference changes
-	[prefs addObserver:tableSourceInstance forKeyPath:SPUseMonospacedFonts options:NSKeyValueObservingOptionNew context:NULL];
-	[prefs addObserver:[SPQueryController sharedQueryController] forKeyPath:SPUseMonospacedFonts options:NSKeyValueObservingOptionNew context:NULL];
-
 	// Register observers for when the logging preference changes
 	[prefs addObserver:[SPQueryController sharedQueryController] forKeyPath:SPConsoleEnableLogging options:NSKeyValueObservingOptionNew context:NULL];
 
@@ -6023,13 +6031,10 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 	[prefs removeObserver:self forKeyPath:SPConsoleEnableLogging];
 	[prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines];
 
-	[prefs removeObserver:tableSourceInstance forKeyPath:SPUseMonospacedFonts];
-
 	[prefs removeObserver:customQueryInstance forKeyPath:SPDisplayTableViewVerticalGridlines];
 	[prefs removeObserver:tableRelationsInstance forKeyPath:SPDisplayTableViewVerticalGridlines];
 	[prefs removeObserver:tableSourceInstance forKeyPath:SPDisplayTableViewVerticalGridlines];
 
-	[prefs removeObserver:[SPQueryController sharedQueryController] forKeyPath:SPUseMonospacedFonts];
 	[prefs removeObserver:[SPQueryController sharedQueryController] forKeyPath:SPConsoleEnableLogging];
 	[prefs removeObserver:[SPQueryController sharedQueryController] forKeyPath:SPDisplayTableViewVerticalGridlines];
 }
@@ -6539,7 +6544,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 		for(NSString* cmdPath in triggeredCommands)
 		{
 			NSArray *data = [cmdPath componentsSeparatedByString:@"|"];
-			NSMenuItem *aMenuItem = [[NSMenuItem alloc] init] ;
+			NSMenuItem *aMenuItem = [[NSMenuItem alloc] init];
 			[aMenuItem setTag:0];
 			[aMenuItem setToolTip:[data objectAtIndex:0]];
 
@@ -6968,7 +6973,7 @@ static int64_t SPDatabaseDocumentInstanceCounter = 0;
 
 		[engine setObject:connection forKey:@"c"];
 
-		[printData setObject:([prefs boolForKey:SPUseMonospacedFonts]) ? SPDefaultMonospacedFontName : @"Lucida Grande" forKey:@"font"];
+		[printData setObject:@"Lucida Grande" forKey:@"font"];
 		[printData setObject:([prefs boolForKey:SPDisplayTableViewVerticalGridlines]) ? @"1px solid #CCCCCC" : @"none" forKey:@"gridlines"];
 
 		NSString *HTMLString = [engine processTemplateInFileAtPath:[[NSBundle mainBundle] pathForResource:SPHTMLPrintTemplate ofType:@"html"] withVariables:printData];

@@ -34,6 +34,8 @@
 #import "NoodleLineNumberView.h"
 #import "RegexKitLite.h"
 
+#import "sequel-ace-Swift.h"
+
 @implementation SPBundleCommandTextView
 
 - (void)dealloc
@@ -363,7 +365,7 @@
 		tvFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:@"BundleEditorFont"]];
 	}
 	if(tvFont == nil) {
-		tvFont = [NSFont fontWithName:SPDefaultMonospacedFontName size:12];
+		tvFont = [NSUserDefaults getFont];
 		[self setFont:tvFont];
 		[prefs setObject:[NSArchiver archivedDataWithRootObject:tvFont] forKey:@"BundleEditorFont"];
 	}
@@ -390,7 +392,7 @@
 	// Soft wrapped lines are indented slightly
 	[paragraphStyle setHeadIndent:4.0f];
 
-	NSMutableDictionary *textAttributes = [[NSMutableDictionary alloc] initWithCapacity:1] ;
+	NSMutableDictionary *textAttributes = [[NSMutableDictionary alloc] initWithCapacity:1];
 	[textAttributes setObject:paragraphStyle forKey:NSParagraphStyleAttributeName];
 
 	NSRange range = NSMakeRange(0, [[self textStorage] length]);
@@ -644,7 +646,7 @@
 						[NSString stringForByteSize:[filesize longLongValue]]]];
 					[alert setHelpAnchor:filepath];
 					[alert setMessageText:NSLocalizedString(@"Warning", @"warning")];
-					[alert setAlertStyle:NSWarningAlertStyle];
+					[alert setAlertStyle:NSAlertStyleWarning];
 					[alert beginSheetModalForWindow:[self window] 
 						modalDelegate:self 
 						didEndSelector:@selector(dragAlertSheetDidEnd:returnCode:contextInfo:) 
@@ -802,6 +804,9 @@
 {
 	if([keyPath isEqualToString:SPCustomQueryEditorTabStopWidth]) {
 		[self setTabStops];
+	}
+	else {
+		[super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
 	}
 }
 

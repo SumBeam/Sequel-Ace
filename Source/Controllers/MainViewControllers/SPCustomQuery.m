@@ -164,7 +164,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	if ([tableDocumentInstance isWorking]) return;
 
 	// Fixes bug in key equivalents.
-	if ([[NSApp currentEvent] type] == NSKeyUp) {
+	if ([[NSApp currentEvent] type] == NSEventTypeKeyUp) {
 		return;
 	}
 
@@ -548,7 +548,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 									   otherButton:nil
 						 informativeTextWithFormat:@"%@", infoString];
 
-	[alert setAlertStyle:NSCriticalAlertStyle];
+	[alert setAlertStyle:NSAlertStyleCritical];
 
 	NSArray *buttons = [alert buttons];
 
@@ -870,7 +870,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 							                                 defaultButton:NSLocalizedString(@"Run All", @"run all button")
 							                               alternateButton:NSLocalizedString(@"Continue", @"continue button")
 							                                   otherButton:NSLocalizedString(@"Stop", @"stop button")
-							                                    alertStyle:NSWarningAlertStyle
+							                                    alertStyle:NSAlertStyleWarning
 							                                     docWindow:[tableDocumentInstance parentWindow]
 							                                 modalDelegate:self
 							                                didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:)
@@ -1735,7 +1735,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	}
 
 	// Update font size on the table
-	NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultTableFont]];
+	NSFont *tableFont = [NSUserDefaults getFont];
 	[customQueryView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	// If there are no table columns to add, return
@@ -1746,7 +1746,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		theCol = [[NSTableColumn alloc] initWithIdentifier:[columnDefinition objectForKey:@"datacolumnindex"]];
 		[theCol setResizingMask:NSTableColumnUserResizingMask];
 		[theCol setEditable:YES];
-		SPTextAndLinkCell *dataCell = [[SPTextAndLinkCell alloc] initTextCell:@""] ;
+		SPTextAndLinkCell *dataCell = [[SPTextAndLinkCell alloc] initTextCell:@""];
 		[dataCell setEditable:YES];
 		[dataCell setFont:tableFont];
 
@@ -1763,7 +1763,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 		if ([[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"integer"]
 			|| [[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"float"])
 		{
-			[dataCell setAlignment:NSRightTextAlignment];
+			[dataCell setAlignment:NSTextAlignmentRight];
 		}
 
 		// Set field type for validations
@@ -2224,9 +2224,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         }
         
         // this is the same as saying (isDesc && !invert) || (!isDesc && invert)
-        if (isDesc != invert) {
-			
-		} else {
+        if (isDesc == invert) {
 			isDesc = !isDesc;
 		}
 	} else {
@@ -2457,7 +2455,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	if (isWorking) {
 		pthread_mutex_lock(&resultDataLock);
 		if (SPIntS2U(row) < [resultData count] && (NSUInteger)[[aTableColumn identifier] integerValue] < [resultData columnCount]) {
-			theValue = [SPDataStorageObjectAtRowAndColumn(resultData, row, [[aTableColumn identifier] integerValue]) copy] ;
+			theValue = [SPDataStorageObjectAtRowAndColumn(resultData, row, [[aTableColumn identifier] integerValue]) copy];
 		}
 		pthread_mutex_unlock(&resultDataLock);
 
@@ -2470,7 +2468,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 	// Get the original data for trying to display the blob data as an image
 	if ([theValue isKindOfClass:[NSData class]]) {
-		image = [[NSImage alloc] initWithData:theValue] ;
+		image = [[NSImage alloc] initWithData:theValue];
 		if(image) {
 			[SPTooltip showWithObject:image atLocation:pos ofType:@"image"];
 			return nil;
@@ -2490,10 +2488,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	[SPTooltip showWithObject:[aCell stringValue]
 			atLocation:pos
 				ofType:@"text"
-		displayOptions:[NSDictionary dictionaryWithObjectsAndKeys:
-					[[aCell font] familyName], @"fontname",
-					[NSString stringWithFormat:@"%f",[[aCell font] pointSize]], @"fontsize",
-					nil]];
+		displayOptions:nil];
 
 	return nil;
 }
@@ -2613,7 +2608,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	NSArray *triggeredCommands = [SPAppDelegate bundleCommandsForTrigger:SPBundleTriggerActionTableRowChanged];
 	for(NSString* cmdPath in triggeredCommands) {
 		NSArray *data = [cmdPath componentsSeparatedByString:@"|"];
-		NSMenuItem *aMenuItem = [[NSMenuItem alloc] init] ;
+		NSMenuItem *aMenuItem = [[NSMenuItem alloc] init];
 		[aMenuItem setTag:0];
 		[aMenuItem setToolTip:[data objectAtIndex:0]];
 
@@ -2979,7 +2974,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	}
 	for (NSDictionary *favorite in [[SPQueryController sharedQueryController] favoritesForFileURL:fileURL]) {
 		if (![favorite isKindOfClass:[NSDictionary class]] || ![favorite objectForKey:@"name"]) continue;
-		NSMutableParagraphStyle *paraStyle = [[NSMutableParagraphStyle alloc] init] ;
+		NSMutableParagraphStyle *paraStyle = [[NSMutableParagraphStyle alloc] init];
 		[paraStyle setTabStops:@[]];
 		[paraStyle addTabStop:[[NSTextTab alloc] initWithType:NSRightTabStopType location:190.0f]];
 		NSDictionary *attributes = @{NSParagraphStyleAttributeName : paraStyle, NSFontAttributeName : [NSFont systemFontOfSize:11]};
@@ -3004,7 +2999,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	}
 	for (NSDictionary *favorite in [prefs objectForKey:SPQueryFavorites]) {
 		if (![favorite isKindOfClass:[NSDictionary class]] || ![favorite objectForKey:@"name"]) continue;
-		NSMutableParagraphStyle *paraStyle = [[NSMutableParagraphStyle alloc] init] ;
+		NSMutableParagraphStyle *paraStyle = [[NSMutableParagraphStyle alloc] init];
 		[paraStyle setTabStops:@[]];
 		[paraStyle addTabStop:[[NSTextTab alloc] initWithType:NSRightTabStopType location:190.0f]];
 		NSDictionary *attributes = @{NSParagraphStyleAttributeName : paraStyle, NSFontAttributeName : [NSFont systemFontOfSize:11]};
@@ -3121,8 +3116,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         [customQueryView setGridStyleMask:([[change objectForKey:NSKeyValueChangeNewKey] boolValue]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 	}
 	// Result Table Font preference changed
-	else if ([keyPath isEqualToString:SPGlobalResultTableFont]) {
-		NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]];
+	else if ([keyPath isEqualToString:SPGlobalFontSettings]) {
+		NSFont *tableFont = [NSUserDefaults getFont];
 		[customQueryView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 		[customQueryView setFont:tableFont];
 		[customQueryView reloadData];
@@ -3445,9 +3440,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 			// Send moveDown/Up to the popup menu
 			NSEvent *arrowEvent;
 			if(command == @selector(moveDown:))
-				arrowEvent = [NSEvent keyEventWithType:NSKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[tableDocumentInstance parentWindow] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x7D];
+				arrowEvent = [NSEvent keyEventWithType:NSEventTypeKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[tableDocumentInstance parentWindow] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x7D];
 			else
-				arrowEvent = [NSEvent keyEventWithType:NSKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[tableDocumentInstance parentWindow] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x7E];
+				arrowEvent = [NSEvent keyEventWithType:NSEventTypeKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[tableDocumentInstance parentWindow] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x7E];
 			[NSApp postEvent:arrowEvent atStart:NO];
 			return YES;
 
@@ -3525,7 +3520,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 	                                             name:SPUserClosedHelpViewerNotification
 	                                           object:[tableDocumentInstance helpViewerClient]];
 
-	[prefs addObserver:self forKeyPath:SPGlobalResultTableFont options:NSKeyValueObservingOptionNew context:NULL];
+	[prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:NULL];
 	[prefs addObserver:self forKeyPath:SPCustomQueryEnableBracketHighlighting options:NSKeyValueObservingOptionNew context:NULL];
 	self.bracketHighlighter = [[SPBracketHighlighter alloc] initWithTextView:textView];
 	self.bracketHighlighter.enabled = [prefs boolForKey:SPCustomQueryEnableBracketHighlighting];
@@ -3596,7 +3591,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 - (void)dealloc
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
-	[prefs removeObserver:self forKeyPath:SPGlobalResultTableFont];
+	[prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
 	[prefs removeObserver:self forKeyPath:SPCustomQueryEnableBracketHighlighting];
 	[NSObject cancelPreviousPerformRequestsWithTarget:customQueryView];
 

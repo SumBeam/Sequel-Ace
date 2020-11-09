@@ -37,16 +37,12 @@
 
 @end
 
-static NSUInteger SPFavoritesOutlineViewUnindent = 6;
-
 @implementation SPFavoritesOutlineView
 
 @synthesize justGainedFocus;
 @synthesize itemForDoubleAction = _itemForDoubleAction;
 
-- (void)awakeFromNib
-{
-	
+- (void)awakeFromNib {
 }
 
 - (BOOL)acceptsFirstResponder
@@ -112,7 +108,7 @@ static NSUInteger SPFavoritesOutlineViewUnindent = 6;
 
 - (void)mouseDown:(NSEvent *)theEvent
 {
-	if([theEvent type] == NSLeftMouseDown && [theEvent clickCount] == 2) {
+	if([theEvent type] == NSEventTypeLeftMouseDown && [theEvent clickCount] == 2) {
 		// The tricky thing is that [self clickedRow] is set from [NSTableView mouseDown], so right now it's not populated.
 		// We can't use [self selectedRow] either, as clicking on empty space does not update the selection.
 		NSPoint clickAt = [theEvent locationInWindow];
@@ -142,42 +138,6 @@ static NSUInteger SPFavoritesOutlineViewUnindent = 6;
 	}
 }
 
-/**		
- * Disclosure triangles for the top-level items hae been removed, and similarly other
- * paddings need altering.  This involves increasing the padding - and reducing the width -
- * of all rows to compensate.
- */
-- (NSRect)frameOfCellAtColumn:(NSInteger)columnIndex row:(NSInteger)rowIndex
-{
-	NSRect superFrame = [super frameOfCellAtColumn:columnIndex row:rowIndex];
-
-	// Don't alter padding for the top-level items
-	if ([[self delegate] respondsToSelector:@selector(outlineView:isGroupItem:)]) {
-		if ([[self delegate] outlineView:self isGroupItem:[self itemAtRow:rowIndex]]) {
-			return superFrame;
-		}
-	}
-
-	return NSMakeRect(superFrame.origin.x + SPFavoritesOutlineViewUnindent, superFrame.origin.y, superFrame.size.width - SPFavoritesOutlineViewUnindent, superFrame.size.height);
-}
-
-/**
- * Disclosure triangles for the top-level items have been removed, the frames for other
- * disclosure items need to be similarly moved.
- */
-- (NSRect)frameOfOutlineCellAtRow:(NSInteger)rowIndex
-{
-	NSRect superFrame = [super frameOfOutlineCellAtRow:rowIndex];
-
-	// Return NSZeroRect if the row is a group row
-	if ([[self delegate] respondsToSelector:@selector(outlineView:isGroupItem:)]) {
-		if ([[self delegate] outlineView:self isGroupItem:[self itemAtRow:rowIndex]]) {
-			return NSZeroRect;
-		}
-	}
-
-	return NSMakeRect(superFrame.origin.x + SPFavoritesOutlineViewUnindent, superFrame.origin.y, superFrame.size.width, superFrame.size.height);
-}
 
 /**
  * If the delegate is a SPConnectionController, and editing is currently in
@@ -201,7 +161,7 @@ static NSUInteger SPFavoritesOutlineViewUnindent = 6;
 		[clipPath appendBezierPathWithOvalInRect:dotRect];
 		[clipPath addClip];
 
-		NSGradient *dotGradient = [[NSGradient alloc] initWithStartingColor:[NSColor colorWithDeviceRed:0.44f green:0.72f blue:0.92f alpha:1.f] endingColor:[NSColor colorWithDeviceRed:0.21f green:0.53f blue:0.82f alpha:1.f]] ;
+		NSGradient *dotGradient = [[NSGradient alloc] initWithStartingColor:[NSColor colorWithDeviceRed:0.44f green:0.72f blue:0.92f alpha:1.f] endingColor:[NSColor colorWithDeviceRed:0.21f green:0.53f blue:0.82f alpha:1.f]];
 		[dotGradient drawInRect:dotRect angle:90.f];
 
 		[NSGraphicsContext restoreGraphicsState];

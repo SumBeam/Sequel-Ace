@@ -59,6 +59,8 @@
 
 #import <SPMySQL/SPMySQL.h>
 
+#import "sequel-ace-Swift.h"
+
 // Constants
 static NSString *SPRemoveNode              = @"RemoveNode";
 static NSString *SPExportFavoritesFilename = @"SequelProFavorites.plist";
@@ -331,20 +333,12 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			[[socketPasswordField undoManager] removeAllActionsWithTarget:socketPasswordField];
 			[[sshPasswordField undoManager] removeAllActionsWithTarget:sshPasswordField];
 		}
-		else {
-			
-			
-		}
 	}
 	
 	if (connectionSSHKeychainItemName && !isTestingConnection) {
 		if ([[keychain getPasswordForName:connectionSSHKeychainItemName account:connectionSSHKeychainItemAccount] isEqualToString:[self sshPassword]]) {
 			[self setSshPassword:[[NSString string] stringByPaddingToLength:[[self sshPassword] length] withString:@"sp" startingAtIndex:0]];
 			[[sshSSHPasswordField undoManager] removeAllActionsWithTarget:sshSSHPasswordField];
-		} 
-		else {
-			
-			
 		}
 	}
 
@@ -494,17 +488,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[keySelectionPanel beginSheetModalForWindow:[dbDocument parentWindow] completionHandler:^(NSInteger returnCode)
 	{
 		NSString *selectedFilePath=[[self->keySelectionPanel URL] path];
-																		   
-		//delay the release so it won't happen while this block is still executing.
-		// jamesstout notes
-		// replacing dispatch_get_current_queue with:
-		// currentQueue = The operation queue that started the operation
-		// underlyingQueue = The dispatch queue used to execute operations
-		// just so happens that in this case it's the main queue anyway
-		dispatch_async(NSOperationQueue.currentQueue.underlyingQueue, ^{
-			
-		});
-		
 		NSError *err=nil;
 		
 		if([self->keySelectionPanel.URL startAccessingSecurityScopedResource] == YES){
@@ -768,7 +751,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	}
 
 	[connectionSplitView setDelegate:nil];
-	[connectionSplitView setPosition:[[[databaseConnectionView subviews] objectAtIndex:0] frame].size.width ofDividerAtIndex:0];
+	[connectionSplitView setPosition:[[[databaseConnectionView subviews] firstObject] frame].size.width ofDividerAtIndex:0];
 	[connectionSplitView setDelegate:self];
 }
 
@@ -1194,7 +1177,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 			[[buttons objectAtIndex:0] setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
 			[[buttons objectAtIndex:1] setKeyEquivalent:@"\r"];
 			
-			[alert setAlertStyle:NSCriticalAlertStyle];
+			[alert setAlertStyle:NSAlertStyleCritical];
 			
 			[alert beginSheetModalForWindow:[dbDocument parentWindow]
 			                  modalDelegate:self
@@ -1307,7 +1290,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	[savePanel beginSheetModalForWindow:[dbDocument parentWindow] completionHandler:^(NSInteger returnCode)
 	{
 		if (returnCode == NSModalResponseOK) {
-			SPFavoritesExporter *exporter = [[SPFavoritesExporter alloc] init] ;
+			SPFavoritesExporter *exporter = [[SPFavoritesExporter alloc] init];
 
 			[exporter setDelegate:self];
 
@@ -2559,7 +2542,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 {
 	if (returnCode == NSAlertFirstButtonReturn || returnCode == NSAlertAlternateReturn) {
 		[errorDetailText setFont:[NSFont userFontOfSize:12]];
-		[errorDetailText setAlignment:NSLeftTextAlignment];
+		[errorDetailText setAlignment:NSTextAlignmentLeft];
 		[errorDetailWindow makeKeyAndOrderFront:self];
 	}
 
@@ -2801,7 +2784,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 - (BOOL)outlineView:(NSOutlineView *)outlineView shouldEditTableColumn:(NSTableColumn *)tableColumn item:(id)item
 {
 	NSEvent *event = [NSApp currentEvent];
-	BOOL shiftTabbedIn = ([event type] == NSKeyDown && [[event characters] length] && [[event characters] characterAtIndex:0] == NSBackTabCharacter);
+	BOOL shiftTabbedIn = ([event type] == NSEventTypeKeyDown && [[event characters] length] && [[event characters] characterAtIndex:0] == NSBackTabCharacter);
 
 	if (shiftTabbedIn && [(SPFavoritesOutlineView *)outlineView justGainedFocus]) {
 		return NO;
@@ -3375,7 +3358,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 		[databaseConnectionSuperview addSubview:connectionView];
 
 		// Set up the splitview
-		[connectionSplitView setMinSize:80.f ofSubviewAtIndex:0];
+		[connectionSplitView setMinSize:150.f ofSubviewAtIndex:0];
 		[connectionSplitView setMinSize:445.f ofSubviewAtIndex:1];
 
 		// Generic folder image for use in the outline view's groups
@@ -3657,6 +3640,14 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 	// Register drag types for the favorites outline view
 	[favoritesOutlineView registerForDraggedTypes:@[SPFavoritesPasteboardDragType]];
 	[favoritesOutlineView setDraggingSourceOperationMask:NSDragOperationMove forLocal:YES];
+
+	NSFont *tableFont = [NSUserDefaults getFont];
+	[favoritesOutlineView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+
+	[favoritesOutlineView setFont:tableFont];
+	for (NSTableColumn *col in [favoritesOutlineView tableColumns]) {
+		[[col dataCell] setFont:tableFont];
+	}
 }
 
 /**

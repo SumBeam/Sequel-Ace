@@ -130,7 +130,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 									   otherButton:nil
 						 informativeTextWithFormat:NSLocalizedString(@"Are you sure you want to change this table's type to %@?\n\nPlease be aware that changing a table's type has the potential to cause the loss of some or all of its data. This action cannot be undone.", @"change table type informative message"), newType];
 	
-	[alert setAlertStyle:NSCriticalAlertStyle];
+	[alert setAlertStyle:NSAlertStyleCritical];
 	
 	NSArray *buttons = [alert buttons];
 	
@@ -534,7 +534,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 		return tableInfo;
 	}
 
-	NSString *HTMLString = [[NSString alloc] initWithData:HTMLData encoding:NSUTF8StringEncoding] ;
+	NSString *HTMLString = [[NSString alloc] initWithData:HTMLData encoding:NSUTF8StringEncoding];
 
 	[tableInfo setObject:HTMLString forKey:@"createSyntax"];
 

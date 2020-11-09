@@ -126,13 +126,16 @@
 	NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
 
 	NSMutableDictionary *preferenceDefaults = [NSMutableDictionary dictionaryWithContentsOfFile:[[NSBundle mainBundle] pathForResource:SPPreferenceDefaultsFile ofType:@"plist"]];
-
-	if (![prefs objectForKey:SPGlobalResultTableFont]) {
-		[preferenceDefaults setObject:[NSArchiver archivedDataWithRootObject:[NSFont systemFontOfSize:11]] forKey:SPGlobalResultTableFont];
-	}
-
 	// Register application defaults
 	[prefs registerDefaults:preferenceDefaults];
+
+	if ([prefs objectForKey:@"GlobalResultTableFont"]) {
+		NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:@"GlobalResultTableFont"]];
+		if (tableFont) {
+			[NSUserDefaults saveFont:tableFont];
+		}
+		[prefs removeObjectForKey:@"GlobalResultTableFont"];
+	}
 
 	// Upgrade prefs before any other parts of the app pick up on the values
 	SPApplyRevisionChanges();
@@ -192,6 +195,16 @@
  */
 - (void)applicationDidFinishLaunching:(NSNotification *)notification
 {
+	
+	[FIRApp configure]; // default options read from Google service plist
+	
+#ifdef DEBUG
+	// default is FIRLoggerLevelNotice, and for App Store apps
+	// cannot be set higher than FIRLoggerLevelNotice
+	[[FIRConfiguration sharedInstance] setLoggerLevel:FIRLoggerLevelDebug];
+#endif
+	
+	
 	NSDictionary *spfDict = nil;
 	NSArray *args = [[NSProcessInfo processInfo] arguments];
 	if (args.count == 5) {
@@ -204,6 +217,7 @@
 			}
 		}
 	}
+
 
 	[[NSDistributedNotificationCenter defaultCenter] addObserver:self selector:@selector(externalApplicationWantsToOpenADatabaseConnection:) name:@"ExternalApplicationWantsToOpenADatabaseConnection" object:nil];
 
@@ -420,7 +434,7 @@
 
 				[alert setHelpAnchor:filePath];
 				[alert setMessageText:NSLocalizedString(@"Warning",@"warning")];
-				[alert setAlertStyle:NSWarningAlertStyle];
+				[alert setAlertStyle:NSAlertStyleWarning];
 
 				NSUInteger returnCode = [alert runModal];
 
@@ -1971,7 +1985,7 @@
 			else
 				keyEq = @"";
 
-			NSMenuItem *mItem = [[NSMenuItem alloc] initWithTitle:[item objectForKey:SPBundleInternLabelKey] action:@selector(bundleCommandDispatcher:) keyEquivalent:keyEq] ;
+			NSMenuItem *mItem = [[NSMenuItem alloc] initWithTitle:[item objectForKey:SPBundleInternLabelKey] action:@selector(bundleCommandDispatcher:) keyEquivalent:keyEq];
 			bundleOtherThanGeneralFound = YES;
 			if([keyEq length])
 				[mItem setKeyEquivalentModifierMask:[[[item objectForKey:SPBundleFileKeyEquivalentKey] objectAtIndex:1] intValue]];
@@ -2004,7 +2018,7 @@
 {
 
 	NSEvent *event = [NSApp currentEvent];
-	BOOL checkForKeyEquivalents = ([event type] == NSKeyDown) ? YES : NO;
+	BOOL checkForKeyEquivalents = ([event type] == NSEventTypeKeyDown) ? YES : NO;
 
 	id firstResponder = [[NSApp keyWindow] firstResponder];
 
@@ -2040,7 +2054,7 @@
 
 		// Sort if more than one found
 		if([assignedKeyEquivalents count] > 1) {
-			NSSortDescriptor *aSortDescriptor = [[NSSortDescriptor alloc] initWithKey:@"title" ascending:YES selector:@selector(caseInsensitiveCompare:)] ;
+			NSSortDescriptor *aSortDescriptor = [[NSSortDescriptor alloc] initWithKey:@"title" ascending:YES selector:@selector(caseInsensitiveCompare:)];
 			NSArray *sorted = [assignedKeyEquivalents sortedArrayUsingDescriptors:@[aSortDescriptor]];
 			[assignedKeyEquivalents setArray:sorted];
 		}
@@ -2055,7 +2069,7 @@
 			if(idx > -1) {
 				NSDictionary *eq = [assignedKeyEquivalents objectAtIndex:idx];
 				if(eq && [eq count]) {
-					NSMenuItem *aMenuItem = [[NSMenuItem alloc] init] ;
+					NSMenuItem *aMenuItem = [[NSMenuItem alloc] init];
 					[aMenuItem setTag:0];
 					[aMenuItem setToolTip:[eq objectForKey:@"path"]];
 					[(SPTextView *)firstResponder executeBundleItemForInputField:aMenuItem];
@@ -2074,7 +2088,7 @@
 			if(idx > -1) {
 				NSDictionary *eq = [assignedKeyEquivalents objectAtIndex:idx];
 				if(eq && [eq count]) {
-					NSMenuItem *aMenuItem = [[NSMenuItem alloc] init] ;
+					NSMenuItem *aMenuItem = [[NSMenuItem alloc] init];
 					[aMenuItem setTag:0];
 					[aMenuItem setToolTip:[eq objectForKey:@"path"]];
 					[(SPCopyTable *)firstResponder executeBundleItemForDataTable:aMenuItem];
@@ -2093,7 +2107,7 @@
 			if(idx > -1) {
 				NSDictionary *eq = [assignedKeyEquivalents objectAtIndex:idx];
 				if(eq && [eq count]) {
-					NSMenuItem *aMenuItem = [[NSMenuItem alloc] init] ;
+					NSMenuItem *aMenuItem = [[NSMenuItem alloc] init];
 					[aMenuItem setTag:0];
 					[aMenuItem setToolTip:[eq objectForKey:@"path"]];
 					[self executeBundleItemForApp:aMenuItem];
@@ -2253,7 +2267,7 @@
  */
 - (BOOL)application:(NSApplication *)sender delegateHandlesKey:(NSString *)key
 {
-	NSLog(@"Not yet implemented: %@", key);
+	SPLog(@"Not yet implemented: %@", key);
 
 	return NO;
 }

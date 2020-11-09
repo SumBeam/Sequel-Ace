@@ -228,8 +228,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[tableContentView setFieldEditorSelectedRange:NSMakeRange(0,0)];
 
 	[prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
-	[prefs addObserver:self forKeyPath:SPGlobalResultTableFont             options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
-	[prefs addObserver:self forKeyPath:SPDisplayBinaryDataAsHex            options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
+	[prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
+	[prefs addObserver:self forKeyPath:SPDisplayBinaryDataAsHex options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
 
 	// Add observer to change view sizes with filter rule editor
 	[[NSNotificationCenter defaultCenter] addObserver:self
@@ -499,7 +499,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	}
 
 	NSString *nullValue = [prefs objectForKey:SPNullValue];
-	NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPGlobalResultTableFont]];
+	NSFont *tableFont = [NSUserDefaults getFont];
 	[tableContentView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	// Add the new columns to the table
@@ -526,7 +526,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		// Set up the data cell depending on the column type
 		id dataCell;
 		if ([[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"enum"]) {
-			dataCell = [[NSComboBoxCell alloc] initTextCell:@""] ;
+			dataCell = [[NSComboBoxCell alloc] initTextCell:@""];
 			[dataCell setButtonBordered:NO];
 			[dataCell setBezeled:NO];
 			[dataCell setDrawsBackground:NO];
@@ -539,12 +539,12 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		// Add a foreign key arrow if applicable
 		} else if ([columnDefinition objectForKey:@"foreignkeyreference"]) {
-			dataCell = [[SPTextAndLinkCell alloc] initTextCell:@""] ;
+			dataCell = [[SPTextAndLinkCell alloc] initTextCell:@""];
 			[dataCell setTarget:self action:@selector(clickLinkArrow:)];
 
 		// Otherwise instantiate a text-only cell
 		} else {
-			dataCell = [[SPTextAndLinkCell alloc] initTextCell:@""] ;
+			dataCell = [[SPTextAndLinkCell alloc] initTextCell:@""];
 		}
 
 		// Set the column to right-aligned for numeric data types
@@ -1189,7 +1189,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// Record whether the filter is being triggered by using delete/backspace in the filter field, which
 	// can trigger the effect of clicking the "clear filter" button in the field.
 	// (Keycode 51 is backspace, 117 is delete.)
-	BOOL deleteTriggeringFilter = ([sender isKindOfClass:[NSSearchField class]] && [[[sender window] currentEvent] type] == NSKeyDown && ([[[sender window] currentEvent] keyCode] == 51 || [[[sender window] currentEvent] keyCode] == 117));
+	BOOL deleteTriggeringFilter = ([sender isKindOfClass:[NSSearchField class]] && [[[sender window] currentEvent] type] == NSEventTypeKeyDown && ([[[sender window] currentEvent] keyCode] == 51 || [[[sender window] currentEvent] keyCode] == 117));
 
 	BOOL resetPaging = NO; // if filtering was triggered by pressing the "Filter" button, reset to page 1
 	
@@ -2412,7 +2412,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			}
 			else {
 				// Set the insertId for fields with auto_increment
-				for ( i = 0; i < [dataColumns count] ; i++ ) {
+				for ( i = 0; i < [dataColumns count]; i++ ) {
 					if ([[NSArrayObjectAtIndex(dataColumns, i) objectForKey:@"autoincrement"] integerValue]) {
 						[tableValues replaceObjectInRow:currentlyEditingRow column:i withObject:[[NSNumber numberWithUnsignedLongLong:[mySQLConnection lastInsertID]] description]];
 					}
@@ -2657,7 +2657,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// Edit row selected - reselect the row, and start editing.
 	if ( returnCode == NSAlertDefaultReturn ) {
 		[tableContentView selectRowIndexes:[NSIndexSet indexSetWithIndex:currentlyEditingRow] byExtendingSelection:NO];
-		[tableContentView performSelector:@selector(keyDown:) withObject:[NSEvent keyEventWithType:NSKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[tableContentView window] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x24] afterDelay:0.0];
+		[tableContentView performSelector:@selector(keyDown:) withObject:[NSEvent keyEventWithType:NSEventTypeKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[tableContentView window] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x24] afterDelay:0.0];
 
 	} 
 	else {
@@ -2792,7 +2792,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	NSMutableString *argument = [NSMutableString string];
 	// Walk through the keys list constructing the argument list
-	for (NSUInteger i = 0 ; i < [keys count] ; i++ ) {
+	for (NSUInteger i = 0 ; i < [keys count]; i++ ) {
 		if ( i )
 			[argument appendString:@" AND "];
 
@@ -3647,8 +3647,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			[tableContentView setGridStyleMask:([[change objectForKey:NSKeyValueChangeNewKey] boolValue]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 		}
 		// Table font preference changed
-		else if ([keyPath isEqualToString:SPGlobalResultTableFont]) {
-			NSFont *tableFont = [NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]];
+		else if ([keyPath isEqualToString:SPGlobalFontSettings]) {
+			NSFont *tableFont = [NSUserDefaults getFont];
 
 			[tableContentView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 			[tableContentView setFont:tableFont];
@@ -3955,7 +3955,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	for (NSString *cmdPath in triggeredCommands)
 	{
 		NSArray *data = [cmdPath componentsSeparatedByString:@"|"];
-		NSMenuItem *aMenuItem = [[NSMenuItem alloc] init] ;
+		NSMenuItem *aMenuItem = [[NSMenuItem alloc] init];
 
 		[aMenuItem setTag:0];
 		[aMenuItem setToolTip:[data objectAtIndex:0]];
@@ -4362,7 +4362,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			pthread_mutex_lock(&tableValuesLock);
 
 			if (row < (NSInteger)tableRowsCount && [[tableColumn identifier] integerValue] < (NSInteger)[tableValues columnCount]) {
-				theValue = [SPDataStorageObjectAtRowAndColumn(tableValues, row, [[tableColumn identifier] integerValue]) copy] ;
+				theValue = [SPDataStorageObjectAtRowAndColumn(tableValues, row, [[tableColumn identifier] integerValue]) copy];
 			}
 
 			pthread_mutex_unlock(&tableValuesLock);
@@ -4376,7 +4376,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		if (theValue == nil) return @"";
 
 		if ([theValue isKindOfClass:[NSData class]]) {
-			image = [[NSImage alloc] initWithData:theValue] ;
+			image = [[NSImage alloc] initWithData:theValue];
 
 			if (image) {
 				[SPTooltip showWithObject:image atLocation:pos ofType:@"image"];
@@ -4398,9 +4398,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		[SPTooltip showWithObject:[aCell stringValue]
 		               atLocation:pos
 		                   ofType:@"text"
-		           displayOptions:[NSDictionary dictionaryWithObjectsAndKeys:[[aCell font] familyName], @"fontname",
-		                                                                     [NSString stringWithFormat:@"%f", [[aCell font] pointSize]], @"fontsize",
-		                                                                     nil]];
+		           displayOptions:nil];
 
 		return @"";
 	}
@@ -4566,7 +4564,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	if(_mainNibLoaded) {
 		//TODO this should be changed to the variant with …context: after 10.6 support is removed!
-		[prefs removeObserver:self forKeyPath:SPGlobalResultTableFont];
+		[prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
 		[prefs removeObserver:self forKeyPath:SPDisplayBinaryDataAsHex];
 		[prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines];
 	}

@@ -191,7 +191,7 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 	if ([control delegate] && [[control delegate] respondsToSelector:@selector(tabView:shouldDropTabViewItem:inTabBar:)] &&
 			[[control delegate] tabView:[control tabView] shouldDropTabViewItem:[[self draggedCell] representedObject] inTabBar:nil]) {
 		_currentTearOffStyle = [control tearOffStyle];
-		_draggedTab = [[PSMTabDragWindowController alloc] initWithImage:dragImage styleMask:NSBorderlessWindowMask tearOffStyle:_currentTearOffStyle initialAlpha:[control usesSafariStyleDragging]?1:kPSMTabDragWindowAlpha];
+		_draggedTab = [[PSMTabDragWindowController alloc] initWithImage:dragImage styleMask:NSWindowStyleMaskBorderless tearOffStyle:_currentTearOffStyle initialAlpha:[control usesSafariStyleDragging]?1:kPSMTabDragWindowAlpha];
 		
 		cellFrame.origin.y -= cellFrame.size.height;
 		[control dragImage:[[NSImage alloc] initWithSize:NSMakeSize(1, 1)] at:cellFrame.origin offset:offset event:event pasteboard:pboard source:control slideBack:NO];
@@ -215,7 +215,7 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 
 		// Add a single placeholder to the tab bar and tell the new tab bar to update.
 		// The placeholder is later removed by distributePlaceholdersInTabBar:.
-		PSMTabBarCell *pc = [[PSMTabBarCell alloc] initPlaceholderWithFrame:[[self draggedCell] frame] expanded:NO inControlView:control] ;
+		PSMTabBarCell *pc = [[PSMTabBarCell alloc] initPlaceholderWithFrame:[[self draggedCell] frame] expanded:NO inControlView:control];
 		[[control cells] addObject:pc];
 		[control update:NO];
 
@@ -642,7 +642,7 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 	NSImage *viewImage = nil;
 	
 	if (outMask) {
-		*outMask = NSBorderlessWindowMask;
+		*outMask = NSWindowStyleMaskBorderless;
 	}
 	
 	if ([control delegate] && [[control delegate] respondsToSelector:@selector(tabView:imageForTabViewItem:offset:styleMask:)]) {
@@ -671,13 +671,13 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 	} else {
 		//the delegate doesn't give a custom image, so use an image of the view
 		NSView *tabView = [[cell representedObject] view];
-		viewImage = [[NSImage alloc] initWithSize:[tabView frame].size] ;
+		viewImage = [[NSImage alloc] initWithSize:[tabView frame].size];
 		[viewImage lockFocus];
 		[tabView drawRect:[tabView bounds]];
 		[viewImage unlockFocus];
 	}
 	
-	if (outMask && (*outMask | NSBorderlessWindowMask)) {
+	if (outMask && (*outMask | NSWindowStyleMaskBorderless)) {
 		_dragWindowOffset.height += 22;
 	}
 	
@@ -687,7 +687,7 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 - (NSImage *)_miniwindowImageOfWindow:(NSWindow *)window
 {
 	NSRect rect = [window frame];
-	NSImage *image = [[NSImage alloc] initWithSize:rect.size] ;
+	NSImage *image = [[NSImage alloc] initWithSize:rect.size];
 	[image lockFocus];
 	rect.origin = NSZeroPoint;
 	CGContextCopyWindowCaptureContentsToRect([[NSGraphicsContext currentContext] graphicsPort], *(CGRect *)&rect, [NSApp contextID], [window windowNumber], 0);
@@ -901,7 +901,7 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 	
     // replace dragged cell with a placeholder, and clean up surrounding cells
     NSInteger cellIndex = [cells indexOfObject:cell];
-    PSMTabBarCell *pc = [[PSMTabBarCell alloc] initPlaceholderWithFrame:[[self draggedCell] frame] expanded:YES inControlView:control] ;
+    PSMTabBarCell *pc = [[PSMTabBarCell alloc] initPlaceholderWithFrame:[[self draggedCell] frame] expanded:YES inControlView:control];
     [cells replaceObjectAtIndex:cellIndex withObject:pc];
     [cells removeObjectAtIndex:(cellIndex + 1)];
     [cells removeObjectAtIndex:(cellIndex - 1)];
@@ -916,11 +916,11 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 {
     NSUInteger i, numVisibleTabs = [control numberOfVisibleTabs];
     for (i = 0; i < numVisibleTabs; i++) {
-        PSMTabBarCell *pc = [[PSMTabBarCell alloc] initPlaceholderWithFrame:[[self draggedCell] frame] expanded:NO inControlView:control] ;
+        PSMTabBarCell *pc = [[PSMTabBarCell alloc] initPlaceholderWithFrame:[[self draggedCell] frame] expanded:NO inControlView:control];
         [[control cells] insertObject:pc atIndex:(2 * i)];
     }
 	
-	PSMTabBarCell *pc = [[PSMTabBarCell alloc] initPlaceholderWithFrame:[[self draggedCell] frame] expanded:NO inControlView:control] ;
+	PSMTabBarCell *pc = [[PSMTabBarCell alloc] initPlaceholderWithFrame:[[self draggedCell] frame] expanded:NO inControlView:control];
 	if ([[control cells] count] > (2 * numVisibleTabs)) {
 		[[control cells] insertObject:pc atIndex:(2 * numVisibleTabs)];
 	} else {

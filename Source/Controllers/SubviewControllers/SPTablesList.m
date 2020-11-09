@@ -109,8 +109,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		prefs = [NSUserDefaults standardUserDefaults];
 
 		[tables addObject:NSLocalizedString(@"TABLES", @"header for table list")];
-		
-		smallSystemFont = [NSFont systemFontOfSize:[NSFont smallSystemFontSize]];
 
 		addTableCharsetHelper = nil; //initialized in awakeFromNib
 	}
@@ -134,6 +132,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	
 	// Disable tab edit behaviour in the tables list
 	[tablesListView setTabEditingDisabled:YES];
+
+	[prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:nil];
 	
 	// Add observers for document task activity
 	[[NSNotificationCenter defaultCenter] addObserver:self
@@ -150,6 +150,33 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 	//create the charset helper
 	addTableCharsetHelper = [[SPCharsetCollationHelper alloc] initWithCharsetButton:tableEncodingButton CollationButton:tableCollationButton];
+
+	NSFont *tableFont = [NSUserDefaults getFont];
+	[tablesListView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+
+	for (NSTableColumn *column in [tablesListView tableColumns]) {
+		[[column dataCell] setFont:tableFont];
+	}
+}
+
+#pragma mark -
+#pragma mark KVO methods
+
+/**
+ * This method is called as part of Key Value Observing which is used to watch for prefernce changes which effect the interface.
+ */
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
+{
+	// Table font preference changed
+	if ([keyPath isEqualToString:SPGlobalFontSettings]) {
+		NSFont *tableFont = [NSUserDefaults getFont];
+		[tablesListView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+		[tablesListView setFont:tableFont];
+		[tablesListView reloadData];
+	}
+	else {
+		[super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
+	}
 }
 
 #pragma mark -
@@ -478,7 +505,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 	NSAlert *alert = [NSAlert alertWithMessageText:@"" defaultButton:NSLocalizedString(@"Delete", @"delete button") alternateButton:NSLocalizedString(@"Cancel", @"cancel button") otherButton:nil informativeTextWithFormat:@""];
 
-	[alert setAlertStyle:NSCriticalAlertStyle];
+	[alert setAlertStyle:NSAlertStyleCritical];
 
 	NSArray *buttons = [alert buttons];
 
@@ -644,7 +671,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 									   otherButton:nil
 						 informativeTextWithFormat:@""];
 
-	[alert setAlertStyle:NSCriticalAlertStyle];
+	[alert setAlertStyle:NSAlertStyleCritical];
 
 	NSArray *buttons = [alert buttons];
 
@@ -1836,7 +1863,12 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
  */
 - (CGFloat)tableView:(NSTableView *)tableView heightOfRow:(NSInteger)row
 {
-	return (row == 0) ? 25 : 20;
+	if (row == 0) {
+		return 25;
+	} else {
+		NSFont *tableFont = [NSUserDefaults getFont];
+		return 2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height;
+	}
 }
 
 - (BOOL)tableView:(NSTableView *)aTableView acceptDrop:(id <NSDraggingInfo>)info row:(NSInteger)row dropOperation:(NSTableViewDropOperation)operation
@@ -1857,7 +1889,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 								 informativeTextWithFormat:NSLocalizedString(@"An error occurred while trying to import a table via: \n%@\n\n\nMySQL said: %@", @"error importing table informative message"),
 									query, [mySQLConnection lastErrorMessage]];
 
-			[alert setAlertStyle:NSCriticalAlertStyle];
+			[alert setAlertStyle:NSAlertStyleCritical];
 			[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] modalDelegate:self didEndSelector:@selector(sheetDidEnd:returnCode:contextInfo:) contextInfo:@"truncateTableError"];
 			return NO;
 		}
@@ -1972,8 +2004,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	}
 
 	if ([[listFilterField stringValue] length]) {
-		if (isTableListFiltered) {
-		}
 		filteredTables = [[NSMutableArray alloc] init];
 		filteredTableTypes = [[NSMutableArray alloc] init];
 
@@ -2181,7 +2211,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		} 
 		// Otherwise, display an alert - and if there's tables left, ask whether to proceed
 		else {
-			NSAlert *alert = [[NSAlert alloc] init] ;
+			NSAlert *alert = [[NSAlert alloc] init];
 			
 			if ([indexes indexLessThanIndex:currentIndex] == NSNotFound) {
 				[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
@@ -2202,7 +2232,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			
 			[alert setMessageText:NSLocalizedString(@"Error", @"error")];
 			[alert setInformativeText:[NSString stringWithFormat:userMessage, [filteredTables objectAtIndex:currentIndex], [mySQLConnection lastErrorMessage]]];
-			[alert setAlertStyle:NSWarningAlertStyle];
+			[alert setAlertStyle:NSAlertStyleWarning];
 			
 			if ([indexes indexLessThanIndex:currentIndex] == NSNotFound) {
 				[alert beginSheetModalForWindow:[tableDocumentInstance parentWindow] modalDelegate:self didEndSelector:nil contextInfo:nil];
@@ -2258,7 +2288,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 				nil,
 				[tableDocumentInstance parentWindow],
 				[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to truncate the table '%@'.\n\nMySQL said: %@", @"error truncating table informative message"), [filteredTables objectAtIndex:currentIndex], [mySQLConnection lastErrorMessage]],
-				NSCriticalAlertStyle
+				NSAlertStyleCritical
 			);
 			
 			*stop = YES;
@@ -2402,9 +2432,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		else {
 			// Error while creating new table
 
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error adding new table", @"error adding new table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the new table '%@'.\n\nMySQL said: %@", @"error adding new table informative message"), tableName, [mySQLConnection lastErrorMessage]] callback:^{
-
-			}];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error adding new table", @"error adding new table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the new table '%@'.\n\nMySQL said: %@", @"error adding new table informative message"), tableName, [mySQLConnection lastErrorMessage]] callback:nil];
 
 			if (changeEncoding) [mySQLConnection restoreStoredEncoding];
 
@@ -2732,6 +2760,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 - (void)dealloc
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
+	[prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
 
 }
 

@@ -45,6 +45,8 @@
 #import "SPEncodingPopupAccessory.h"
 #import "SPThreadAdditions.h"
 #import "SPFunctions.h"
+#import "SPQueryController.h"
+#import "SPConstants.h"
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -613,7 +615,7 @@
 							                                           alternateButton:NSLocalizedString(@"Cancel Import", @"sql import : charset error alert : cancel button")
 							                                               otherButton:nil
 							                                 informativeTextWithFormat:NSLocalizedString(@"The SQL file uses utf8mb4 encoding, but your MySQL version only supports the limited utf8 subset.\n\nYou can continue the import, but any non-BMP characters in the SQL file (eg. some typographic and scientific special characters, archaic CJK logograms, emojis) will be unrecoverably lost!", @"sql import : charset error alert : detail message")];
-							[charsetErrorAlert setAlertStyle:NSWarningAlertStyle];
+							[charsetErrorAlert setAlertStyle:NSAlertStyleWarning];
 							charsetErrorSheetReturnCode = [charsetErrorAlert runModal];
 						});
 
@@ -640,7 +642,7 @@
 						                                       alternateButton:NSLocalizedString(@"Ignore All Errors", @"ignore errors button")
 						                                           otherButton:NSLocalizedString(@"Stop", @"stop button")
 						                             informativeTextWithFormat:NSLocalizedString(@"[ERROR in query %ld] %@\n", @"error text when multiple custom query failed"), (long)(queriesPerformed+1), [self->mySQLConnection lastErrorMessage]];
-						[sqlErrorAlert setAlertStyle:NSWarningAlertStyle];
+						[sqlErrorAlert setAlertStyle:NSAlertStyleWarning];
 						sqlImportErrorSheetReturnCode = [sqlErrorAlert runModal];
 					});
 
@@ -1104,6 +1106,10 @@
 							[errors appendFormat:
 								NSLocalizedString(@"[ERROR in row %ld] %@\n", @"error text when reading of csv file gave errors"),
 								(long)(rowsImported+1),[mySQLConnection lastErrorMessage]];
+							
+							if(user_defaults_get_bool_ud(SPConsoleEnableImportExportLogging, prefs) == YES){
+								[[SPQueryController sharedQueryController] showErrorInConsole:mySQLConnection.lastErrorMessage connection:mySQLConnection.host database:mySQLConnection.database];
+							}
 						}
 
 						if ( insertRemainingRowsAfterUpdate && ![mySQLConnection rowsAffectedByLastQuery]) {
@@ -1141,6 +1147,9 @@
 				// If an error occurred, run the queries individually to get exact line errors
 				if (!importMethodIsUpdate && [mySQLConnection queryErrored]) {
 					[[tableDocumentInstance onMainThread] showConsole:nil];
+					if(user_defaults_get_bool_ud(SPConsoleEnableImportExportLogging, prefs) == YES){
+						[[SPQueryController sharedQueryController] showErrorInConsole:mySQLConnection.lastErrorMessage connection:mySQLConnection.host database:mySQLConnection.database];
+					}
 					for (i = 0; i < csvRowsThisQuery; i++) {
 						if (progressCancelled) break;
 						query = [[NSMutableString alloc] initWithString:insertBaseString];
@@ -1156,6 +1165,9 @@
 							[errors appendFormat:
 								NSLocalizedString(@"[ERROR in row %ld] %@\n", @"error text when reading of csv file gave errors"),
 								(long)(rowsImported+1),[mySQLConnection lastErrorMessage]];
+							if(user_defaults_get_bool_ud(SPConsoleEnableImportExportLogging, prefs) == YES){
+								[[SPQueryController sharedQueryController] showErrorInConsole:mySQLConnection.lastErrorMessage connection:mySQLConnection.host database:mySQLConnection.database];
+							}
 						}
 #warning duplicate code (see above)
 						rowsImported++;
@@ -1646,9 +1658,7 @@
 	[switchButton setButtonType:NSSwitchButton];
 	[switchButton setControlSize:NSControlSizeSmall];
 
-	CGFloat monospacedFontSize = [[NSUserDefaults standardUserDefaults] floatForKey:SPMonospacedFontSize] > 0 ? [prefs floatForKey:SPMonospacedFontSize] : [NSFont smallSystemFontSize];
-
-	[errorsView setFont:[prefs boolForKey:SPUseMonospacedFonts] ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] : [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
+	[errorsView setFont:[NSUserDefaults getFont]];
 }
 
 /**

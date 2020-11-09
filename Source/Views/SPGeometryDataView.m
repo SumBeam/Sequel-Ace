@@ -85,9 +85,7 @@
 	x_min*=zoom_factor;
 	y_min*=zoom_factor;
 
-	if ( (self = [super initWithFrame:NSMakeRect(0,0,width+margin_offset*2,height+margin_offset*2)]) )
-	{
-	}
+	self = [super initWithFrame:NSMakeRect(0,0,width+margin_offset*2,height+margin_offset*2)];
 
 	lineColor         = [NSColor blackColor];
 	borderLineColor   = [NSColor grayColor];
@@ -255,7 +253,7 @@
 	[bitmap setSize:imgSize];
 	[self cacheDisplayInRect:myBounds toBitmapImageRep:bitmap];
 
-	NSImage* image = [[NSImage alloc]initWithSize:imgSize] ;
+	NSImage* image = [[NSImage alloc]initWithSize:imgSize];
 	[image addRepresentation:bitmap];
 	return image;
 

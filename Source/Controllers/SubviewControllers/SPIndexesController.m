@@ -41,6 +41,8 @@
 
 #import <SPMySQL/SPMySQL.h>
 
+#import "sequel-ace-Swift.h"
+
 // Constants
 static const NSString *SPNewIndexIndexName      = @"IndexName";
 static const NSString *SPNewIndexIndexType      = @"IndexType";
@@ -113,26 +115,25 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 	// Set the index tables view's vertical gridlines if required
 	[indexesTableView setGridStyleMask:([prefs boolForKey:SPDisplayTableViewVerticalGridlines]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 
-	// Set the strutcture and index view's font
-	BOOL useMonospacedFont = [prefs boolForKey:SPUseMonospacedFonts];
-
-	CGFloat monospacedFontSize = [prefs floatForKey:SPMonospacedFontSize] > 0 ? [prefs floatForKey:SPMonospacedFontSize] : [NSFont smallSystemFontSize];
+	NSFont *tableFont = [NSUserDefaults getFont];
+	[indexesTableView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+	[indexedColumnsTableView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	// Set the double-click action in blank areas of the table to create new rows
 	[indexesTableView setEmptyDoubleClickAction:@selector(addIndex:)];
 
 	for (NSTableColumn *indexColumn in [indexesTableView tableColumns])
 	{
-		[[indexColumn dataCell] setFont:useMonospacedFont ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] : [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
+		[[indexColumn dataCell] setFont:tableFont];
 	}
 
 	for (NSTableColumn *fieldColumn in [indexedColumnsTableView tableColumns])
 	{
-		[[fieldColumn dataCell] setFont:useMonospacedFont ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] : [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
+		[[fieldColumn dataCell] setFont:tableFont];
 	}
 
 	[prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:IndexesControllerKVOContext];
-	[prefs addObserver:self forKeyPath:SPUseMonospacedFonts                options:NSKeyValueObservingOptionNew context:IndexesControllerKVOContext];
+	[prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:nil];
 }
 
 #pragma mark -
@@ -195,7 +196,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 	for (NSDictionary *field in fields)
 	{
 		if (![indexedFieldNames containsObject:[field objectForKey:@"name"]]) {
-			initialField = [field mutableCopy] ;
+			initialField = [field mutableCopy];
 			break;
 		}
 	}
@@ -258,7 +259,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 									   otherButton:nil
 						 informativeTextWithFormat:NSLocalizedString(@"Are you sure you want to delete the index '%@'? This action cannot be undone.", @"delete index informative message"), keyName];
 
-	[alert setAlertStyle:NSCriticalAlertStyle];
+	[alert setAlertStyle:NSAlertStyleCritical];
 
 	NSArray *buttons = [alert buttons];
 
@@ -649,26 +650,17 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 		if ([keyPath isEqualToString:SPDisplayTableViewVerticalGridlines]) {
 			[indexesTableView setGridStyleMask:([[change objectForKey:NSKeyValueChangeNewKey] boolValue]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 		}
-		// Use monospaced fonts preference changed
-		else if ([keyPath isEqualToString:SPUseMonospacedFonts]) {
+	}
+	// Table font preference changed
+	else if ([keyPath isEqualToString:SPGlobalFontSettings]) {
+		NSFont *tableFont = [NSUserDefaults getFont];
 
-			BOOL useMonospacedFont = [[change objectForKey:NSKeyValueChangeNewKey] boolValue];
-			CGFloat monospacedFontSize = [prefs floatForKey:SPMonospacedFontSize] > 0 ? [prefs floatForKey:SPMonospacedFontSize] : [NSFont smallSystemFontSize];
-
-			for (NSTableColumn *indexColumn in [indexesTableView tableColumns])
-			{
-				[[indexColumn dataCell] setFont:useMonospacedFont ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] : [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
-			}
-
-			for (NSTableColumn *indexColumn in [indexedColumnsTableView tableColumns])
-			{
-				[[indexColumn dataCell] setFont:useMonospacedFont ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] : [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
-			}
-
-			[indexesTableView reloadData];
-
-			[self _reloadIndexedColumnsTableData];
-		}
+		[indexesTableView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+		[indexedColumnsTableView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+		[indexesTableView setFont:tableFont];
+		[indexedColumnsTableView setFont:tableFont];
+		[indexesTableView reloadData];
+		[self _reloadIndexedColumnsTableData];
 	}
 	else {
 		[super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
@@ -727,7 +719,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 	// SPATIAL index types are only available using the MyISAM engine
 	if (isMyISAMTable) {
 		if ([[dbDocument serverSupport] supportsSpatialExtensions]) {
-			NSMenuItem *spatialMenuItem = [[NSMenuItem alloc] init] ;
+			NSMenuItem *spatialMenuItem = [[NSMenuItem alloc] init];
 			
 			[spatialMenuItem setTitle:NSLocalizedString(@"SPATIAL", @"spatial index menu item title")];
 			[spatialMenuItem setTag:SPSpatialMenuTag];
@@ -738,7 +730,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 	
 	// FULLTEXT only works with MyISAM and (InnoDB since 5.6.4)
 	if (isMyISAMTable || (isInnoDBTable && [[dbDocument serverSupport] supportsFulltextOnInnoDB])) {
-		NSMenuItem *fullTextMenuItem = [[NSMenuItem alloc] init] ;
+		NSMenuItem *fullTextMenuItem = [[NSMenuItem alloc] init];
 		
 		[fullTextMenuItem setTitle:NSLocalizedString(@"FULLTEXT", @"full text index menu item title")];
 		[fullTextMenuItem setTag:SPFullTextMenuTag];
@@ -1016,7 +1008,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 									   otherButton:nil
 						 informativeTextWithFormat:NSLocalizedString(@"The foreign key relationship '%@' has a dependency on index '%@'. This relationship must be removed before the index can be deleted.\n\nAre you sure you want to continue to delete the relationship and the index? This action cannot be undone.", @"table structure : indexes : delete index : error 1553 : description"), constraintName, keyName];
 	
-	[alert setAlertStyle:NSCriticalAlertStyle];
+	[alert setAlertStyle:NSAlertStyleCritical];
 	
 	NSArray *buttons = [alert buttons];
 	
@@ -1098,7 +1090,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 - (void)dealloc
 {
 	[prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines]; //TODO: update to ...context: variant after 10.6
-	[prefs removeObserver:self forKeyPath:SPUseMonospacedFonts]; //TODO: update to ...context: variant after 10.6
+	[prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
 
 }
 

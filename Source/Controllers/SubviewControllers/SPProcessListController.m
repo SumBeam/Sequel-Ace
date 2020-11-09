@@ -37,6 +37,8 @@
 
 #import <SPMySQL/SPMySQL.h>
 
+#import "sequel-ace-Swift.h"
+
 // Constants
 static NSString *SPKillProcessQueryMode        = @"SPKillProcessQueryMode";
 static NSString *SPKillProcessConnectionMode   = @"SPKillProcessConnectionMode";
@@ -100,13 +102,12 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	// Set the process table view's vertical gridlines if required
 	[processListTableView setGridStyleMask:([prefs boolForKey:SPDisplayTableViewVerticalGridlines]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 
-	// Set the strutcture and index view's font
-	BOOL useMonospacedFont = [prefs boolForKey:SPUseMonospacedFonts];
-	CGFloat monospacedFontSize = [prefs floatForKey:SPMonospacedFontSize] > 0 ? [prefs floatForKey:SPMonospacedFontSize] : [NSFont smallSystemFontSize];
+	NSFont *tableFont = [NSUserDefaults getFont];
+	[processListTableView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	for (NSTableColumn *column in [processListTableView tableColumns])
 	{
-		[[column dataCell] setFont:useMonospacedFont ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] : [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
+		[[column dataCell] setFont:tableFont];
 
 		// Add a formatter for linebreak display
 		[[column dataCell] setFormatter:[SPDataCellFormatter new]];
@@ -284,7 +285,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	[[buttons objectAtIndex:0] setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
 	[[buttons objectAtIndex:1] setKeyEquivalent:@"\r"];
 	
-	[alert setAlertStyle:NSCriticalAlertStyle];
+	[alert setAlertStyle:NSAlertStyleCritical];
 	
 	// while the alert is displayed, the results may be updated and the selectedRow may point to a different
 	// row or has disappeared (= -1) by the time the didEndSelector is invoked,
@@ -319,7 +320,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	[[buttons objectAtIndex:0] setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
 	[[buttons objectAtIndex:1] setKeyEquivalent:@"\r"];
 	
-	[alert setAlertStyle:NSCriticalAlertStyle];
+	[alert setAlertStyle:NSAlertStyleCritical];
 	
 	// while the alert is displayed, the results may be updated and the selectedRow may point to a different
 	// row or has disappeared (= -1) by the time the didEndSelector is invoked,
@@ -474,18 +475,16 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	if ([keyPath isEqualToString:SPDisplayTableViewVerticalGridlines]) {
         [processListTableView setGridStyleMask:([[change objectForKey:NSKeyValueChangeNewKey] boolValue]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 	}
-	// Use monospaced fonts preference changed
-	else if ([keyPath isEqualToString:SPUseMonospacedFonts]) {
-		
-		BOOL useMonospacedFont = [[change objectForKey:NSKeyValueChangeNewKey] boolValue];
-		CGFloat monospacedFontSize = [prefs floatForKey:SPMonospacedFontSize] > 0 ? [prefs floatForKey:SPMonospacedFontSize] : [NSFont smallSystemFontSize];
+	// Table font preference changed
+	else if ([keyPath isEqualToString:SPGlobalFontSettings]) {
+		NSFont *tableFont = [NSUserDefaults getFont];
 
-		for (NSTableColumn *column in [processListTableView tableColumns])
-		{
-			[[column dataCell] setFont:useMonospacedFont ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] : [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
-		}
-		
+		[processListTableView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+		[processListTableView setFont:tableFont];
 		[processListTableView reloadData];
+	}
+	else {
+		[super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
 	}
 }
 
@@ -516,8 +515,8 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 - (void)windowWillClose:(NSNotification *)notification
 {	
 	// If the filtered array is allocated and it's not a reference to the processes array get rid of it
-	if ((processesFiltered) && (processesFiltered != processes)) {
-		
+	if (processesFiltered && processesFiltered != processes) {
+		processesFiltered = nil;
 	}
 	
 	// Kill the auto refresh timer if running
@@ -732,8 +731,8 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	
 	// If the filtered array is allocated and its not a reference to the processes array,
 	// relase it to prevent memory leaks upon the next allocation.
-	if ((processesFiltered) && (processesFiltered != processes)) {
-		
+	if (processesFiltered && processesFiltered != processes) {
+		processesFiltered = nil;
 	}
 	
 	processesFiltered = [[NSMutableArray alloc] init];
@@ -782,8 +781,8 @@ static NSString * const SPKillIdKey   = @"SPKillId";
  */
 - (void)_addPreferenceObservers
 {
-	// Register as an observer for the when the UseMonospacedFonts preference changes
-	[prefs addObserver:self forKeyPath:SPUseMonospacedFonts options:NSKeyValueObservingOptionNew context:NULL];
+	// Register as an observer for font changes
+	[prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:nil];
 
 	// Register to obeserve table view vertical grid line pref changes
 	[prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:NULL];
@@ -794,7 +793,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
  */
 - (void)_removePreferenceObservers
 {
-	[prefs removeObserver:self forKeyPath:SPUseMonospacedFonts];
+	[prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
 	[prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines];
 }
 

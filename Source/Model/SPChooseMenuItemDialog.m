@@ -65,7 +65,7 @@
 - (id)init;
 {
 	if ((self = [super initWithContentRect:NSMakeRect(1, 1, 2, 2) 
-								styleMask:NSBorderlessWindowMask 
+								styleMask:NSWindowStyleMaskBorderless 
 								  backing:NSBackingStoreBuffered 
 									defer:NO]))
 	{
@@ -100,7 +100,7 @@
 	[dialog initDialog];
 	
 	NSInteger cnt = 0;
-	NSMenu *theMenu = [[NSMenu alloc] init] ;
+	NSMenu *theMenu = [[NSMenu alloc] init];
 	
 	for (id item in theList) 
 	{
@@ -137,7 +137,7 @@
 
 	// Send a right-click to order front the context menu
 	NSEvent *theEvent = [NSEvent
-	        mouseEventWithType:NSRightMouseDown
+	        mouseEventWithType:NSEventTypeRightMouseDown
 	        location:NSMakePoint(1,1)
 	        modifierFlags:0
 	        timestamp:1
@@ -151,7 +151,7 @@
 
 	while ([dialog waitForChoice] && [[[NSApp keyWindow] firstResponder] isKindOfClass:[SPChooseMenuItemDialogTextView class]]) 
 	{
-		NSEvent* event = [NSApp nextEventMatchingMask:NSAnyEventMask
+		NSEvent* event = [NSApp nextEventMatchingMask:NSEventMaskAny
                                           untilDate:[NSDate distantFuture]
                                              inMode:NSDefaultRunLoopMode
                                             dequeue:YES];

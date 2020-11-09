@@ -39,6 +39,8 @@
 
 #import <SPMySQL/SPMySQL.h>
 
+#import "sequel-ace-Swift.h"
+
 static NSString *SPRemoveRelation = @"SPRemoveRelation";
 
 static NSString *SPRelationNameKey       = @"name";
@@ -87,17 +89,15 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	// Set the double-click action in blank areas of the table to create new rows
 	[relationsTableView setEmptyDoubleClickAction:@selector(addRelation:)];
 
-	// Set the strutcture and index view's font
-	BOOL useMonospacedFont = [[NSUserDefaults standardUserDefaults] boolForKey:SPUseMonospacedFonts];
-	CGFloat monospacedFontSize = [prefs floatForKey:SPMonospacedFontSize] > 0 ? [prefs floatForKey:SPMonospacedFontSize] : [NSFont smallSystemFontSize];
+	[prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:nil];
+
+	NSFont *tableFont = [NSUserDefaults getFont];
+	[relationsTableView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	for (NSTableColumn *column in [relationsTableView tableColumns])
 	{
-		[[column dataCell] setFont:(useMonospacedFont) ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] : [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
+		[[column dataCell] setFont:tableFont];
 	}
-	
-	// Register as an observer for the when the UseMonospacedFonts preference changes
-	[[NSUserDefaults standardUserDefaults] addObserver:self forKeyPath:SPUseMonospacedFonts options:NSKeyValueObservingOptionNew context:NULL];
 	
 	[[NSNotificationCenter defaultCenter] addObserver:self
 											 selector:@selector(tableSelectionChanged:) 
@@ -189,7 +189,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 		// Retrieve the last connection error message.
 		NSString *errorText = [connection lastErrorMessage];
 		
-		NSAlert *alert = [[NSAlert alloc] init] ;
+		NSAlert *alert = [[NSAlert alloc] init];
 		
 		[alert setMessageText:NSLocalizedString(@"Error creating relation", @"error creating relation message")];
 		[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
@@ -317,7 +317,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 										   otherButton:nil 
 							 informativeTextWithFormat:NSLocalizedString(@"Are you sure you want to delete the selected relations? This action cannot be undone.", @"delete selected relation informative message")];
 
-		[alert setAlertStyle:NSCriticalAlertStyle];
+		[alert setAlertStyle:NSAlertStyleCritical];
 
 		NSArray *buttons = [alert buttons];
 
@@ -387,7 +387,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	//dim the database name if it matches the current database
 	if([[tableColumn identifier] isEqualToString:SPRelationFKDatabaseKey] && [[tableDocumentInstance database] isEqual:data]) {
 		NSDictionary *textAttributes = @{NSForegroundColorAttributeName: [NSColor lightGrayColor]};
-		data = [[NSAttributedString alloc] initWithString:(NSString *)data attributes:textAttributes] ;
+		data = [[NSAttributedString alloc] initWithString:(NSString *)data attributes:textAttributes];
 	}
 	return data;
 }
@@ -507,18 +507,16 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	if ([keyPath isEqualToString:SPDisplayTableViewVerticalGridlines]) {
         [relationsTableView setGridStyleMask:([[change objectForKey:NSKeyValueChangeNewKey] boolValue]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 	}
-	// Use monospaced fonts preference changed
-	else if ([keyPath isEqualToString:SPUseMonospacedFonts]) {
+	// Table font preference changed
+	else if ([keyPath isEqualToString:SPGlobalFontSettings]) {
+		NSFont *tableFont = [NSUserDefaults getFont];
 
-		BOOL useMonospacedFont = [[change objectForKey:NSKeyValueChangeNewKey] boolValue];
-		CGFloat monospacedFontSize = [prefs floatForKey:SPMonospacedFontSize] > 0 ? [prefs floatForKey:SPMonospacedFontSize] : [NSFont smallSystemFontSize];
-
-		for (NSTableColumn *column in [relationsTableView tableColumns])
-		{
-			[[column dataCell] setFont:(useMonospacedFont) ? [NSFont fontWithName:SPDefaultMonospacedFontName size:monospacedFontSize] : [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
-		}
-
+		[relationsTableView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+		[relationsTableView setFont:tableFont];
 		[relationsTableView reloadData];
+	}
+	else {
+		[super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
 	}
 }
 
@@ -679,7 +677,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 - (void)dealloc
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
-	[[NSUserDefaults standardUserDefaults] removeObserver:self forKeyPath:SPUseMonospacedFonts];
+	[prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
 
 }
 
